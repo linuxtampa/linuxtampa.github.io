@@ -1,0 +1,27 @@
+{
+  "businessName": "LinuxTampa, LLC",
+  "tagline": "Your Guide to OpenSource Software for Business",
+  "email": "hello@linuxtampa.com",
+  "phone": "(813) 900-8131",
+  "location": "Tampa area, FL",
+  "website": "https://linuxtampa.com",
+  "linkedin": "https://linkedin.com/in/timbaileyjones",
+  "github": "https://github.com/timbaileyjones",
+  "calendly": "https://calendly.com/timbaileyjones",
+  "logo": "/images/linuxtampa.png",
+  "colors": {
+    "navy": "#0a2540",
+    "teal": "#1ba098",
+    "terminalGreen": "#00ff9f",
+    "orange": "#ff6600"
+  },
+  "services": [
+    "Website design, implementation and improvements",
+    "Backend implementation & improvements",
+    "Cloud design, automation & hosting (any provider)",
+    "Linux server administration",
+    "API integration"
+  ],
+  "regionsServed": "Remote US/EU"
+}
+

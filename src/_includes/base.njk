@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if title %}{{ title }} | {% endif %}{{ site.businessName }}</title>
+  <meta name="description" content="{% if description %}{{ description }}{% else %}{{ site.tagline }}{% endif %}">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          {% if site.logo %}
+          <img src="{{ site.logo }}" alt="{{ site.businessName }}" />
+          {% else %}
+          <span class="wordmark">{{ site.businessName }}</span>
+          {% endif %}
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    {{ content | safe }}
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; {% year %} {{ site.businessName }}. All rights reserved.</p>
+      <div class="footer-links">
+        {% if site.linkedin %}<a href="{{ site.linkedin }}" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
+        {% if site.github %}<a href="{{ site.github }}" target="_blank" rel="noopener">GitHub</a>{% endif %}
+        {% if site.email %}<a href="mailto:{{ site.email }}">Email</a>{% endif %}
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+

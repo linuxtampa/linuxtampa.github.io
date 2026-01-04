@@ -1,0 +1,17 @@
+{
+  "name": "linuxtampa-site",
+  "version": "1.0.0",
+  "description": "Static website for LinuxTampa, LLC",
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve",
+    "watch": "eleventy --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@11ty/eleventy": "^2.0.1"
+  }
+}
+
