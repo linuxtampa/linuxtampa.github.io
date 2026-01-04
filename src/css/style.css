@@ -14,20 +14,44 @@
   --bg-gray: #e5e5e5;
   --text-dark: #333;
   --text-light: #666;
+  
+  /* Light theme (default) */
+  --bg-body: #e5e5e5;
+  --bg-main: #ffffff;
+  --bg-header: var(--navy);
+  --bg-footer: #f5f5f5;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-inverse: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  /* Dark theme */
+  --bg-body: #1a1a1a;
+  --bg-main: #2d2d2d;
+  --bg-header: #0a0a0a;
+  --bg-footer: #1f1f1f;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-inverse: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.3);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
-  color: var(--text-dark);
-  background: var(--bg-gray);
+  color: var(--text-primary);
+  background: var(--bg-body);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Navigation */
 header {
-  background: var(--navy);
-  color: white;
+  background: var(--bg-header);
+  color: var(--text-inverse);
   padding: 1rem 0;
+  transition: background-color 0.3s ease;
 }
 
 .nav-container {
@@ -55,9 +79,26 @@ header {
 }
 
 .nav-links a {
-  color: white;
+  color: var(--text-inverse);
   text-decoration: none;
   transition: opacity 0.2s;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--text-inverse);
+  color: var(--text-inverse);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-links a:hover {
@@ -70,10 +111,11 @@ main {
   margin: 0 auto;
   padding: 2rem;
   min-height: calc(100vh - 200px);
-  background: white;
+  background: var(--bg-main);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   overflow: auto; /* Clearfix for floated elements */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Logo floating right */
@@ -88,9 +130,10 @@ main {
 
 /* Footer */
 footer {
-  background: var(--warm-gray);
+  background: var(--bg-footer);
   padding: 2rem 0;
   margin-top: 4rem;
+  transition: background-color 0.3s ease;
 }
 
 .footer-container {
@@ -108,7 +151,7 @@ footer {
 }
 
 .footer-links a {
-  color: var(--text-dark);
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -141,6 +184,11 @@ footer {
     max-height: 250px;
     margin: 0 auto 2rem auto;
     display: block;
+  }
+  
+  .theme-toggle {
+    margin-left: 0;
+    margin-top: 0.5rem;
   }
 }
 
