@@ -1,0 +1,38 @@
+---
+layout: base.njk
+title: Blog
+description: Thoughts on Linux, cloud infrastructure, DevOps, and lessons from 30+ years in the field.
+---
+<div class="blog-index">
+  <h1>Blog</h1>
+  <p class="blog-intro">Thoughts on Linux, cloud infrastructure, DevOps, and lessons from 30+ years in the field.</p>
+
+  {% if collections.blog.length %}
+  <ul class="post-list">
+    {% for post in collections.blog %}
+    <li class="post-item">
+      <a href="{{ post.url }}">
+        <span class="post-title">{{ post.data.title }}</span>
+        <span class="post-date">{{ post.date | readableDate }}</span>
+      </a>
+      {% if post.data.description %}
+      <p class="post-excerpt">{{ post.data.description }}</p>
+      {% endif %}
+      {% if post.data.tags %}
+      <div class="post-tags">
+        {% for tag in post.data.tags %}
+          {% if tag != "blog" %}
+          <span class="tag">{{ tag }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Posts coming soon.</p>
+  {% endif %}
+
+  <p class="rss-link"><a href="/feed.xml">RSS Feed</a></p>
+</div>

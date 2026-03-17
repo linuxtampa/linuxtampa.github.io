@@ -1,0 +1,27 @@
+---
+permalink: /feed.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>{{ site.businessName }} Blog</title>
+  <subtitle>{{ site.tagline }}</subtitle>
+  <link href="{{ site.website }}/feed.xml" rel="self"/>
+  <link href="{{ site.website }}/"/>
+  <updated>{{ collections.blog | getNewestCollectionItemDate | dateToRfc3339 }}</updated>
+  <id>{{ site.website }}/</id>
+  <author>
+    <name>Tim Bailey Jones</name>
+    <email>{{ site.email }}</email>
+  </author>
+  {%- for post in collections.blog %}
+  <entry>
+    <title>{{ post.data.title }}</title>
+    <link href="{{ site.website }}{{ post.url }}"/>
+    <updated>{{ post.date | dateToRfc3339 }}</updated>
+    <id>{{ site.website }}{{ post.url }}</id>
+    <content type="html">{{ post.templateContent | htmlToAbsoluteUrls(site.website + post.url) }}</content>
+    {% if post.data.description %}<summary>{{ post.data.description }}</summary>{% endif %}
+  </entry>
+  {%- endfor %}
+</feed>
