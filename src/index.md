@@ -10,6 +10,8 @@ description: Your Guide to OpenSource Software for Business
 
 {{ site.tagline }}
 
+With over 30 years of software development experience, I specialize in helping businesses leverage open source technologies and cloud infrastructure to solve complex challenges. From secure defense-sector environments to high-scale cloud migrations, I bring deep expertise in full-stack development, DevOps automation, and system architecture.
+
 ## Services
 
 We provide expert consulting services in:
