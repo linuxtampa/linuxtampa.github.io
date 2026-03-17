@@ -105,6 +105,16 @@ header {
   opacity: 0.8;
 }
 
+/* Lists */
+main ul, main ol {
+  margin: 0.5rem 0 1rem 2rem;
+  padding-left: 1rem;
+}
+
+main li {
+  margin-bottom: 0.25rem;
+}
+
 /* Main content */
 main {
   max-width: 1200px;

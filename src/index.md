@@ -17,7 +17,7 @@ With over 30 years of software development experience, I specialize in helping b
 We provide expert consulting services in:
 
 {% for service in site.services %}
-- {{ service }}
+  - {{ service }}
 {% endfor %}
 
 ## Get in Touch
