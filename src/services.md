@@ -4,11 +4,9 @@ title: Services
 description: Consulting services offered by LinuxTampa, LLC
 ---
 
-# Services
-
 {{ site.businessName }} offers comprehensive consulting services to help your business leverage open source software effectively.
 
-## Our Offerings
+## Services
 
 <!-- NOTE: Keep these sections in the same order as the "services" array in src/_data/site.json,
      which controls the order they appear on the homepage and other listings. -->
@@ -27,7 +25,7 @@ Build robust, scalable backend systems that power your applications. We design a
 
 ### Cloud design, automation & hosting (any provider)
 
-Leverage the cloud effectively with architecture designed for your specific needs. We work across all major cloud providers (AWS, Google Cloud, Azure) to design, automate, and deploy infrastructure that scales with your business. Our expertise includes Infrastructure as Code, automated deployments, cost optimization, and multi-cloud strategies.
+Leverage the cloud effectively with architecture designed for your specific needs. We work across all major cloud providers (AWS, Google Cloud, Azure) to design, automate, and deploy infrastructure that scales with your business. My expertise includes Infrastructure as Code, automated deployments, cost optimization, and multi-cloud strategies.
 
 **Real-world experience:**
 - Developed Matter Foundations, McKinsey's internal cloud infrastructure creation tool for customer Cloud Transformation engagements

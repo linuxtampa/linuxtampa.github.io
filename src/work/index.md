@@ -4,9 +4,9 @@ title: Work
 description: Case studies and project examples from LinuxTampa, LLC
 ---
 
-# Our Work
+# My Work
 
-We've helped businesses across various industries leverage open source technologies to solve complex challenges, improve efficiency, and scale their operations. With over 30 years of experience, our projects span from embedded systems and telecommunications to modern cloud infrastructure and AI validation.
+I've helped businesses across various industries leverage open source technologies to solve complex challenges, improve efficiency, and scale their operations. With over 30 years of experience, our projects span from embedded systems and telecommunications to modern cloud infrastructure and AI validation.
 
 ## Case Studies
 
@@ -23,7 +23,7 @@ We've helped businesses across various industries leverage open source technolog
 
 ## Industries Served
 
-Our consulting work spans multiple industries and project types:
+My consulting work spans multiple industries and project types:
 
 **Defense & Government**
 - Secure infrastructure hardening with STIG implementation and FIPS 140-3 compliance
