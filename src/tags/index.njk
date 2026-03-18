@@ -1,0 +1,33 @@
+---
+layout: base.njk
+pagination:
+  data: collections
+  size: 1
+  alias: tag
+  filter:
+    - all
+    - blog
+permalink: /tags/{{ tag }}/
+eleventyComputed:
+  title: "Posts tagged: {{ tag }}"
+  description: "All posts tagged '{{ tag }}'"
+---
+<div class="blog-index">
+  <h1>Posts tagged: <em>{{ tag }}</em></h1>
+
+  <ul class="post-list">
+    {% for post in collections[tag] | reverse %}
+    <li class="post-item">
+      <a href="{{ post.url }}">
+        <span class="post-title">{{ post.data.title }}</span>
+        <span class="post-date">{{ post.date | readableDate }}</span>
+      </a>
+      {% if post.data.description %}
+      <p class="post-excerpt">{{ post.data.description }}</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  <p class="rss-link"><a href="/blog/">&larr; All posts</a></p>
+</div>

@@ -22,7 +22,7 @@ description: Thoughts on Linux, cloud infrastructure, DevOps, and lessons from 3
       <div class="post-tags">
         {% for tag in post.data.tags %}
           {% if tag != "blog" %}
-          <span class="tag">{{ tag }}</span>
+          <a href="/tags/{{ tag }}/" class="tag">{{ tag }}</a>
           {% endif %}
         {% endfor %}
       </div>

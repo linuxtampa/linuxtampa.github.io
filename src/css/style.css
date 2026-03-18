@@ -274,6 +274,9 @@ footer {
   font-size: 1.1rem;
   font-weight: 600;
 }
+[data-theme="dark"] .post-item a {
+  color: inherit;
+}
 .post-item a:hover .post-title {
   text-decoration: underline;
 }
@@ -294,12 +297,25 @@ footer {
   flex-wrap: wrap;
   gap: 0.4rem;
 }
-.tag {
-  background: var(--teal);
-  color: #fff;
+.tag, a.tag {
+  background: var(--navy);
+  color: #ffd700;
   font-size: 0.75rem;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
+  text-decoration: none;
+}
+.tag:hover {
+  background: var(--teal);
+  color: var(--navy);
+}
+[data-theme="dark"] .tag {
+  background: var(--teal);
+  color: var(--navy);
+}
+[data-theme="dark"] .tag:hover {
+  background: #157a72;
+  color: #fff;
 }
 .rss-link {
   margin-top: 2rem;
