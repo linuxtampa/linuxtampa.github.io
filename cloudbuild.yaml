@@ -2,15 +2,18 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - name: 'node:lts'
+  - id: 'Install dependencies'
+    name: 'node:lts'
     entrypoint: 'npm'
     args: ['install']
 
-  - name: 'node:lts'
+  - id: 'Build site'
+    name: 'node:lts'
     entrypoint: 'npm'
     args: ['run', 'build']
 
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - id: 'Deploy to GCS'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'storage'
@@ -20,7 +23,8 @@ steps:
       - '--recursive'
       - '--delete-unmatched-destination-objects'
 
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  - id: 'Invalidate CDN cache'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'compute'
