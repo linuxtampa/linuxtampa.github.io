@@ -31,5 +31,18 @@
     const currentTheme = html.getAttribute('data-theme');
     setTheme(currentTheme === 'dark' ? 'light' : 'dark');
   });
+
+  // Hide our toggle if Dark Reader is active — it's already doing the job
+  const checkDarkReader = () => {
+    const drActive = html.hasAttribute('data-darkreader-scheme');
+    themeToggle.style.visibility = drActive ? 'hidden' : '';
+  };
+
+  checkDarkReader();
+
+  new MutationObserver(checkDarkReader).observe(html, {
+    attributes: true,
+    attributeFilter: ['data-darkreader-scheme']
+  });
 })();
 

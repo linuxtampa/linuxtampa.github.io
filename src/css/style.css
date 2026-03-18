@@ -57,11 +57,12 @@ body > header {
 
 .nav-container {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 0 auto !important;
   padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
+  display: flex !important;
+  justify-content: space-between !important;
   align-items: center;
+  width: 100%;
 }
 
 .logo img {
