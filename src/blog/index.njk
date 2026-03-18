@@ -11,7 +11,7 @@ description: Thoughts on Linux, cloud infrastructure, DevOps, and lessons from 3
   <ul class="post-list">
     {% for post in collections.blog %}
     <li class="post-item">
-      <a href="{{ post.url }}">
+      <a href="{{ post.url }}" class="post-link">
         <span class="post-title">{{ post.data.title }}</span>
         <span class="post-date">{{ post.date | readableDate }}</span>
       </a>

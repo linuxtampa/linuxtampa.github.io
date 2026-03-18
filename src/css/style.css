@@ -264,7 +264,7 @@ footer {
   flex-direction: column;
   gap: 2rem;
 }
-.post-item a {
+.post-item .post-link {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -274,7 +274,7 @@ footer {
   font-size: 1.1rem;
   font-weight: 600;
 }
-[data-theme="dark"] .post-item a {
+[data-theme="dark"] .post-item .post-link {
   color: inherit;
 }
 .post-item a:hover .post-title {
@@ -297,7 +297,7 @@ footer {
   flex-wrap: wrap;
   gap: 0.4rem;
 }
-.tag, a.tag {
+.tag {
   background: var(--navy);
   color: #ffd700;
   font-size: 0.75rem;
