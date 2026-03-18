@@ -6,36 +6,37 @@
 }
 
 :root {
-  --navy: #0a2540;
-  --teal: #1ba098;
-  --terminal-green: #00ff9f;
-  --orange: #ff6600;
-  --warm-gray: #f5f5f5;
-  --bg-gray: #e5e5e5;
-  --text-dark: #333;
-  --text-light: #666;
-  
+  --navy: #2c1a0e;
+  --teal: #b84c1a;
+  --orange: #b84c1a;
+  --warm-gray: #f5ede3;
+  --bg-gray: #ede4d8;
+  --text-dark: #2c1a0e;
+  --text-light: #7a5c4a;
+
   /* Light theme (default) */
-  --bg-body: #e5e5e5;
-  --bg-main: #ffffff;
+  --bg-body: #ede4d8;
+  --bg-main: #fdf8f2;
   --bg-header: var(--navy);
-  --bg-footer: #f5f5f5;
-  --text-primary: #333;
-  --text-secondary: #666;
-  --text-inverse: #ffffff;
-  --shadow: rgba(0, 0, 0, 0.1);
+  --bg-footer: #f5ede3;
+  --text-primary: #2c1a0e;
+  --text-secondary: #7a5c4a;
+  --text-inverse: #fdf8f2;
+  --shadow: rgba(44, 26, 14, 0.12);
 }
 
 [data-theme="dark"] {
-  /* Dark theme */
-  --bg-body: #1a1a1a;
-  --bg-main: #2d2d2d;
-  --bg-header: #0a0a0a;
-  --bg-footer: #1f1f1f;
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
-  --text-inverse: #ffffff;
-  --shadow: rgba(0, 0, 0, 0.3);
+  /* Dark theme — terminal hacker */
+  --navy: #001a0d;
+  --teal: #00ff9f;
+  --bg-body: #0a0f0a;
+  --bg-main: #0f150f;
+  --bg-header: #060a06;
+  --bg-footer: #0a0f0a;
+  --text-primary: #00ff9f;
+  --text-secondary: #00994d;
+  --text-inverse: #00ff9f;
+  --shadow: rgba(0, 255, 159, 0.05);
 }
 
 body {
@@ -129,6 +130,12 @@ body > header {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.carousel-slide.headshot {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 8px solid var(--teal);
+  box-sizing: border-box;
 }
 
 .carousel-btn {
@@ -299,7 +306,7 @@ footer {
 }
 .tag {
   background: var(--navy);
-  color: #ffd700;
+  color: #d4a840;
   font-size: 0.75rem;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
@@ -307,15 +314,15 @@ footer {
 }
 .tag:hover {
   background: var(--teal);
-  color: var(--navy);
+  color: #fff;
 }
 [data-theme="dark"] .tag {
-  background: var(--teal);
-  color: var(--navy);
+  background: #001a0d;
+  color: #00ff9f;
 }
 [data-theme="dark"] .tag:hover {
-  background: #157a72;
-  color: #fff;
+  background: #00ff9f;
+  color: #0a0f0a;
 }
 .rss-link {
   margin-top: 2rem;

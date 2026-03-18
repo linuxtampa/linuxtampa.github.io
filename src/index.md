@@ -7,7 +7,7 @@ description: Your Guide to OpenSource Software for Business
 <div class="carousel" id="homepage-carousel">
   <div class="carousel-track">
     <img src="{{ site.logo }}" alt="{{ site.businessName }}" class="carousel-slide" />
-    <img src="/images/tim.jpg" alt="Tim Bailey Jones" class="carousel-slide" />
+    <img src="/images/tim.jpg" alt="Tim Bailey Jones" class="carousel-slide headshot" />
   </div>
   <button class="carousel-btn prev" onclick="carouselMove(-1)" aria-label="Previous">&#8249;</button>
   <button class="carousel-btn next" onclick="carouselMove(1)" aria-label="Next">&#8250;</button>
