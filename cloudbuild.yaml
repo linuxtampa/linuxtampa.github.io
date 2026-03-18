@@ -2,18 +2,36 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - id: 'Install dependencies'
-    name: 'node:lts'
-    entrypoint: 'npm'
-    args: ['install']
+  - id: 'Restore node_modules cache'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gsutil cp gs://${PROJECT_ID}_cloudbuild/cache/linuxtampa.com/node_modules.tar.gz /tmp/node_modules.tar.gz \
+          && tar -xzf /tmp/node_modules.tar.gz \
+          || echo "Cache miss — fresh install"
 
-  - id: 'Build site'
-    name: 'node:lts'
-    entrypoint: 'npm'
-    args: ['run', 'build']
+  - id: 'Install and Build'
+    name: 'node:lts-alpine'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - 'npm ci && npm run build'
+
+  - id: 'Save node_modules cache'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    waitFor: ['Install and Build']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        tar -czf /tmp/node_modules.tar.gz node_modules \
+          && gsutil cp /tmp/node_modules.tar.gz gs://${PROJECT_ID}_cloudbuild/cache/linuxtampa.com/node_modules.tar.gz
 
   - id: 'Deploy to GCS'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    waitFor: ['Install and Build']
     entrypoint: 'gcloud'
     args:
       - 'storage'
@@ -25,6 +43,7 @@ steps:
 
   - id: 'Invalidate CDN cache'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    waitFor: ['Deploy to GCS']
     entrypoint: 'gcloud'
     args:
       - 'compute'
