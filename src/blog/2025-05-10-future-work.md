@@ -10,7 +10,7 @@ tags:
   - cloud
 ---
 
-## What You Get With Me
+## What I offer
 
 I have been working with AWS Cloud technologies heavily since 2017, and more recently with GCP (Google Cloud Platform).  Before that, I developed many applications going back to the early 1990s.  I'm proficient in front-end, back-end, and cloud, and I am at my best in a role where I can contribute on all three fronts.
 
@@ -54,7 +54,7 @@ I don't have a lot of no-go zones, so let's get them out of the way first.
     I saw my [first webpage in 1991 on NetCom](https://en.wikipedia.org/wiki/Netcom_(United_States)), and have been writing web applications ever since. Today, I am fluent in React, and for legacy sites that aren't React, I find that jQuery is still quite relevant.
     I have generated lots of HTML content with Java Server Pages, PHP, and ColdFusion.
 
-## What I look for in employers
+## What I look for
 
  * **Full-time / Remote Work** <br/>
    In addition to the usual advantages of remote work, I get unparalleled peace and quiet working from my rural property.
