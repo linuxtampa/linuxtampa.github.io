@@ -19,6 +19,8 @@ tags:
 
 > **[PLACEHOLDER: Personal section — Tim to write in own voice]**
 >
+> **[PHOTO: Take a selfie in the vim shirt!]**
+>
 > *Suggested beats to hit:*
 > - *The lineage: `vi` (1976, Bill Joy, ADM-3A terminal) → `vim` (Vi Improved, 1991) → `gvim` (graphical vim) → `neovim` (2014, modern rewrite with Lua, LSP, async)*
 > - *The muscle memory argument: modal editing is a skill that transfers everywhere. Once it's in your fingers, you're faster in every environment that supports it — and most do.*
