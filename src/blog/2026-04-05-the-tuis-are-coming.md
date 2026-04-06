@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "The TUIs Are Coming!"
-date: 2026-04-05
+date: 2026-04-14
 description: "Four terminal UI programs that replaced half my browser tabs: btop, lazygit, lazydocker, and k9s — and why the terminal renaissance is real."
 published: false
 templateEngineOverride: md

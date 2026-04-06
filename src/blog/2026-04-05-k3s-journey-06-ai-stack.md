@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 6: The AI Stack — Ollama, Open WebUI, and Qdrant"
-date: 2026-04-05
+date: 2026-04-10
 description: Running a local LLM inference server, a ChatGPT-like web interface, and a vector database on a bare-metal k3s cluster — with a GPU upgrade path baked into the manifests and lessons about memory limits and startup probes.
 published: false
 templateEngineOverride: md

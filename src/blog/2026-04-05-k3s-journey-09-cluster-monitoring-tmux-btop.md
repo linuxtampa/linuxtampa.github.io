@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 9: Cluster-Wide Monitoring with tmux and btop"
-date: 2026-04-05
+date: 2026-04-13
 description: "A 10-line zsh function that opens a tiled tmux session with btop running on all four cluster nodes simultaneously — instant cluster-wide visibility without Prometheus, Grafana, or a web browser."
 published: false
 templateEngineOverride: md
