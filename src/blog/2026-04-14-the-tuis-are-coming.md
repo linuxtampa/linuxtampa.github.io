@@ -2,7 +2,7 @@
 layout: blog-post.njk
 title: "The TUIs Are Coming!"
 date: 2026-04-14
-description: "Four terminal UI programs that replaced half my browser tabs: btop, lazygit, lazydocker, and k9s — and why the terminal renaissance is real."
+description: "The terminal programs that replaced half my browser tabs and my GUI AI tools: btop, lazygit, lazydocker, k9s, Claude Code, Aider, and more — and why the terminal renaissance is real."
 published: false
 templateEngineOverride: md
 tags:
@@ -21,7 +21,7 @@ For the past decade or so, the conventional wisdom was that GUIs had won. Every 
 
 And then something interesting happened. A new generation of terminal UI (TUI) programs started appearing — and they were *good*. Not "good for a terminal app" good. Just good. Faster than web dashboards, lower cognitive overhead, keyboard-driven, and composable in ways that point-and-click tools never are.
 
-I now spend most of my working day inside four of them. Let me show you why.
+I now spend most of my working day inside these. Let me show you why.
 
 ---
 
@@ -232,6 +232,101 @@ k9s --namespace forgejo        # start in a specific namespace
 
 ---
 
+## AI in the Terminal
+
+The most interesting recent development in the TUI space is AI coding assistants that live entirely in the terminal. Cursor and VS Code with Copilot are excellent tools — but they're GUI applications. If you live in the terminal, or you're SSHed into a remote machine, or you just don't want another Electron app eating RAM, there are now compelling alternatives.
+
+### Claude Code
+
+> **[SCREENSHOT: Claude Code session in the terminal — conversational interface with file edits applied inline]**
+
+[Claude Code](https://claude.ai/code) is Anthropic's official CLI for Claude. It's the tool I'm using to write this post and build this website. It's not a traditional TUI with panels — it's a conversational coding assistant that runs in your terminal, reads and edits your files, runs commands, and maintains context across a full coding session.
+
+What makes it different from just using the Claude web interface:
+
+- **It has your codebase.** It reads files, searches with grep and glob, runs your tests, checks git history. The context isn't what you paste in — it's your actual project.
+- **It acts.** It doesn't just suggest changes — it makes them, with your approval. Edit a file, run a build, fix the error, commit.
+- **It stays in the terminal.** Same window as your shell, your editor, your logs. No context switching.
+
+The workflow shift is real. Work that used to mean Google → Stack Overflow → docs → manual edits now looks like: describe what you want, review the diff, approve. This entire blog series was drafted in Claude Code sessions against the homelab-seed repo's git history and IaC files.
+
+```bash
+# Install
+npm install -g @anthropic-ai/claude-code
+
+# Run (from your project root)
+claude
+```
+
+### Aider
+
+> **[SCREENSHOT: Aider session showing a code change being applied with a diff view and git commit]**
+
+[Aider](https://aider.chat) is an open-source AI pair programmer for the terminal. It predates Claude Code and takes a slightly different approach: rather than a conversational session, you add files to the context explicitly (`/add src/foo.py`), make requests, and Aider applies changes and auto-commits them to git.
+
+Aider's strengths:
+
+- **Multi-model.** Works with Claude, GPT-4o, Gemini, local Ollama models. You can point it at the `llama3.2` model running on your homelab's Ollama instance for fully local, fully private AI coding assistance.
+- **Explicit file context.** You control exactly which files are in context, which matters for large codebases where you don't want to burn tokens on irrelevant files.
+- **Automatic git commits.** Every change gets committed with a generated message. Your git history becomes a log of AI-assisted changes.
+- **Diff-first UI.** Every proposed change shows as a diff before being applied.
+
+```bash
+pip install aider-chat
+
+# With Claude
+aider --model claude-opus-4-5
+
+# With your local Ollama (free, private)
+aider --model ollama/llama3.2:3b
+```
+
+### `llm` — A Swiss Army Knife for Language Models
+
+[`llm`](https://llm.datasette.io) by Simon Willison is a CLI tool that lets you query any LLM from your terminal with a single command. It's not a coding assistant — it's a general-purpose AI interface for shell pipelines.
+
+```bash
+# Install
+pip install llm
+
+# Install provider plugins
+llm install llm-claude-3
+llm install llm-ollama  # for local Ollama models
+
+# Use it
+cat error.log | llm "what is causing this error?"
+git diff | llm "write a commit message for these changes"
+llm "explain this kubectl output: $(kubectl get events -n forgejo)"
+```
+
+That last pattern — piping command output directly into an LLM — is where `llm` earns its place. You can pipe log output, command results, file contents, and get back a concise explanation or next step. It integrates with shell history, supports conversations with `-c` (continue the last conversation), and logs everything locally.
+
+It also works with local Ollama models via the `llm-ollama` plugin, which means fully private AI queries with no API cost.
+
+### `mods` — AI for the Shell, with Style
+
+[`mods`](https://github.com/charmbracelet/mods) is by [Charm](https://charm.sh) — the team behind Bubble Tea (the TUI framework that powers many of the programs in this post). It does similar things to `llm` but renders output with syntax highlighting, markdown formatting, and their characteristic visual polish.
+
+```bash
+brew install charmbracelet/tap/mods
+
+# Summarize a file
+mods "what does this do?" < ansible/install_k3s.yml
+
+# Pipe kubectl output
+kubectl describe pod -n forgejo act-runner-0 | mods "why is this pod not starting?"
+```
+
+The experience is noticeably nicer than raw `llm` output when you want readable, formatted responses rather than plain text for further piping.
+
+### A Note on Cursor
+
+Cursor is a GUI IDE — a fork of VS Code with deep AI integration. It's excellent at what it does, and if you prefer a graphical editor, it's worth using. But it's not a TUI and it doesn't belong in this list. There's no terminal-only mode, no SSH-compatible headless version, no tmux pane you can drop it into.
+
+The terminal AI tools above — Claude Code and Aider especially — cover the use cases where Cursor can't go: remote servers, SSH sessions, scripted workflows, pipelines. They're complements, not replacements.
+
+---
+
 ## The Setup
 
 All four tools live on my Mac and on the cluster nodes where relevant. The Ansible `install_utils.yml` playbook handles the cluster nodes:
@@ -252,6 +347,9 @@ For the Mac, everything goes through Homebrew:
 
 ```bash
 brew install btop lazygit lazydocker k9s
+brew install charmbracelet/tap/mods
+npm install -g @anthropic-ai/claude-code
+pip install aider-chat llm
 ```
 
 I also keep btop running on each cluster node via a persistent tmux session — useful when SSHed in for maintenance to have a live resource view without launching a separate session.
