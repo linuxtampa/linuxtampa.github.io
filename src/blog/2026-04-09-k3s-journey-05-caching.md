@@ -16,7 +16,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 5 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 4](/blog/2026-04-05-k3s-journey-04-dev-platform/) covered the self-hosted dev platform.*
+*This is Part 5 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 4](/blog/2026-04-08-k3s-journey-04-dev-platform/) covered the self-hosted dev platform.*
 
 ---
 
@@ -249,4 +249,4 @@ The act_runner docker-storage volume was originally a Longhorn PVC. The ext4 jou
 
 ---
 
-*Next up: [Part 6 — The AI Stack: Ollama, Open WebUI, and Qdrant](/blog/2026-04-05-k3s-journey-06-ai-stack/), where we run a local LLM inference server and vector database on commodity hardware.*
+*Next up: [Part 6 — The AI Stack: Ollama, Open WebUI, and Qdrant](/blog/2026-04-10-k3s-journey-06-ai-stack/), where we run a local LLM inference server and vector database on commodity hardware.*

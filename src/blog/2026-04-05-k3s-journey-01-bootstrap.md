@@ -275,4 +275,4 @@ All four nodes Ready. Control plane on the PowerEdge. Three workers waiting for 
 
 ---
 
-*Next up: [Part 2 — Persistent Storage with Longhorn](/blog/2026-04-05-k3s-journey-02-longhorn/), where we tackle replicated block storage across heterogeneous hardware — including one node whose disk layout didn't go as planned.*
+*Next up: [Part 2 — Persistent Storage with Longhorn](/blog/2026-04-06-k3s-journey-02-longhorn/), where we tackle replicated block storage across heterogeneous hardware — including one node whose disk layout didn't go as planned.*

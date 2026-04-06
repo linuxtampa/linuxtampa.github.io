@@ -17,7 +17,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 3 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 2](/blog/2026-04-05-k3s-journey-02-longhorn/) covered Longhorn persistent storage.*
+*This is Part 3 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 2](/blog/2026-04-06-k3s-journey-02-longhorn/) covered Longhorn persistent storage.*
 
 ---
 
@@ -235,4 +235,4 @@ kubectl describe certificate longhorn-tls -n longhorn-system
 
 ---
 
-*Next up: [Part 4 — Self-Hosted Dev Platform: Forgejo, CI/CD, and the act_runner Saga](/blog/2026-04-05-k3s-journey-04-dev-platform/), where we deploy a self-hosted git server and learn several hard lessons about running CI runners in Kubernetes.*
+*Next up: [Part 4 — Self-Hosted Dev Platform: Forgejo, CI/CD, and the act_runner Saga](/blog/2026-04-08-k3s-journey-04-dev-platform/), where we deploy a self-hosted git server and learn several hard lessons about running CI runners in Kubernetes.*

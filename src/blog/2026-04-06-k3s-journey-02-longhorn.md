@@ -218,4 +218,4 @@ If the PVC binds, Longhorn is working. Delete it after verification.
 
 ---
 
-*Next up: [Part 3 — TLS Everywhere with cert-manager and Traefik](/blog/2026-04-05-k3s-journey-03-tls/), where we get wildcard HTTPS certificates for all cluster services via Let's Encrypt DNS-01 challenges.*
+*Next up: [Part 3 — TLS Everywhere with cert-manager and Traefik](/blog/2026-04-07-k3s-journey-03-tls/), where we get wildcard HTTPS certificates for all cluster services via Let's Encrypt DNS-01 challenges.*
