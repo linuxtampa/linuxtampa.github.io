@@ -15,6 +15,22 @@ tags:
   - git
 ---
 
+## Before We Start: The Superpower You Should Acquire
+
+> **[PLACEHOLDER: Personal section — Tim to write in own voice]**
+>
+> *Suggested beats to hit:*
+> - *The lineage: `vi` (1976, Bill Joy, ADM-3A terminal) → `vim` (Vi Improved, 1991) → `gvim` (graphical vim) → `neovim` (2014, modern rewrite with Lua, LSP, async)*
+> - *The muscle memory argument: modal editing is a skill that transfers everywhere. Once it's in your fingers, you're faster in every environment that supports it — and most do.*
+> - *Where you use vim bindings today: neovim as primary editor on all cluster nodes (installed via Ansible), VS Code/Cursor vim extension, JetBrains IDEs (IdeaVim plugin), Obsidian (vim mode), the shell (set -o vi in zsh), tmux copy mode, k9s, lazygit — the list is long.*
+> - *Obsidian specifically: note-taking with vim keybindings, Zettelkasten workflow, why it's a natural fit for someone already living in the terminal.*
+> - *The "always available" argument for vi/vim: SSH into any Linux box on the planet, even a minimal Alpine container, and `vi` is there. It's the universal editor. You don't get stranded.*
+> - *neovim's modern plugin ecosystem: LSP integration (autocomplete, go-to-definition, inline errors), Treesitter (semantic syntax highlighting), telescope.nvim (fuzzy finder), lazy.nvim (plugin manager). It's a full IDE if you want it to be.*
+> - *IDE vim plugins worth naming: VSCodeVim / VSCode Neovim (VS Code + Cursor), IdeaVim (all JetBrains IDEs), vim-mode-plus (Pulsar/Atom legacy), Sublime Text vintage mode.*
+> - *The honest admission: there's a learning curve and it's steep. Worth it. No compunctions about using it everywhere.*
+
+---
+
 ## The Terminal Didn't Die. It Got a Glow-Up.
 
 For the past decade or so, the conventional wisdom was that GUIs had won. Every tool worth using had a web dashboard. Monitoring? CloudWatch. Git? GitHub's web editor. Kubernetes? The dashboard. Docker? Docker Desktop.
