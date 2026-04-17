@@ -32,7 +32,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addCollection("blog", (collectionApi) => {
     return collectionApi
       .getFilteredByGlob("src/blog/*.md")
-      .filter(p => !p.data.draft)
+      .filter(p => p.data.published !== false)
       .reverse();
   });
 
