@@ -18,7 +18,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 7 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 6](/blog/2026-04-10-k3s-journey-06-ai-stack/) covered the AI stack.*
+*This is Part 7 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 6](/blog/2026-05-10-k3s-journey-06-ai-stack/) covered the AI stack.*
 
 ---
 
@@ -272,4 +272,4 @@ Any container that needs to participate in LAN discovery protocols (mDNS, SSDP, 
 
 ---
 
-*Next up: [Part 8 — What's Next: Authentication, Monitoring, Backups, and Drift Detection](/blog/2026-04-12-k3s-journey-08-whats-next/), where we look at what the cluster still needs to be truly production-grade.*
+*Next up: [Part 8 — What's Next: Authentication, Monitoring, Backups, and Drift Detection](/blog/2026-05-24-k3s-journey-08-whats-next/), where we look at what the cluster still needs to be truly production-grade.*

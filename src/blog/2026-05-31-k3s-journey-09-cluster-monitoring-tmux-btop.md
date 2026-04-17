@@ -17,7 +17,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 9 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 8](/blog/2026-04-12-k3s-journey-08-whats-next/) covered what the cluster still needs to be production-grade.*
+*This is Part 9 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 8](/blog/2026-05-24-k3s-journey-08-whats-next/) covered what the cluster still needs to be production-grade.*
 
 ---
 
@@ -25,7 +25,7 @@ tags:
 
 The cluster is running. Services are up. Then something starts behaving badly — a CI job takes forever, a Longhorn replication is crawling, Open WebUI is sluggish. The question is always the same: *which node is having the problem?*
 
-The proper answer is a full observability stack: Prometheus scraping metrics from every node, Grafana dashboards with historical graphs, Alertmanager sending you a Slack notification before you even notice. That's [on the backlog](/blog/2026-04-12-k3s-journey-08-whats-next/).
+The proper answer is a full observability stack: Prometheus scraping metrics from every node, Grafana dashboards with historical graphs, Alertmanager sending you a Slack notification before you even notice. That's [on the backlog](/blog/2026-05-24-k3s-journey-08-whats-next/).
 
 The *practical* answer, for right now, is ten lines of shell.
 

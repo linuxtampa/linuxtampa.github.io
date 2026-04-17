@@ -17,7 +17,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 4 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 3](/blog/2026-04-07-k3s-journey-03-tls/) covered TLS with cert-manager and Traefik.*
+*This is Part 4 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 3](/blog/2026-04-19-k3s-journey-03-tls/) covered TLS with cert-manager and Traefik.*
 
 ---
 
@@ -274,4 +274,4 @@ Rather than block everything on fixing this, I left it with a prominent comment:
 
 ---
 
-*Next up: [Part 5 — Caching Infrastructure: Docker Registry and apt-cacher-ng](/blog/2026-04-09-k3s-journey-05-caching/), where we speed up image pulls and package installs with local caching layers.*
+*Next up: [Part 5 — Caching Infrastructure: Docker Registry and apt-cacher-ng](/blog/2026-05-03-k3s-journey-05-caching/), where we speed up image pulls and package installs with local caching layers.*

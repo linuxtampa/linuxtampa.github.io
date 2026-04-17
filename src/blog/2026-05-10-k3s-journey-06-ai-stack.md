@@ -17,7 +17,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 6 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 5](/blog/2026-04-09-k3s-journey-05-caching/) covered caching infrastructure.*
+*This is Part 6 of the [k3s Journey](/tags/series:k3s-journey) series. [Part 5](/blog/2026-05-03-k3s-journey-05-caching/) covered caching infrastructure.*
 
 ---
 
@@ -208,4 +208,4 @@ Without pinning Ollama to the PowerEdge, the Kubernetes scheduler may place it o
 
 ---
 
-*Next up: [Part 7 — Data Layer and Applications: PostgreSQL, Odoo, WireGuard, and Home Assistant](/blog/2026-04-11-k3s-journey-07-applications/), where we deploy a shared database, a full ERP system, a VPN, and a smart home controller.*
+*Next up: [Part 7 — Data Layer and Applications: PostgreSQL, Odoo, WireGuard, and Home Assistant](/blog/2026-05-17-k3s-journey-07-applications/), where we deploy a shared database, a full ERP system, a VPN, and a smart home controller.*

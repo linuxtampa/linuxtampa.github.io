@@ -17,7 +17,7 @@ tags:
   - series:k3s-journey
 ---
 
-*This is Part 8 of the [k3s Journey](/tags/series:k3s-journey) series and the final installment of the current cluster build. [Part 7](/blog/2026-04-11-k3s-journey-07-applications/) covered the application layer.*
+*This is Part 8 of the [k3s Journey](/tags/series:k3s-journey) series and the final installment of the current cluster build. [Part 7](/blog/2026-05-17-k3s-journey-07-applications/) covered the application layer.*
 
 ---
 
