@@ -21,11 +21,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Full github.com URLs so the runner fetches actions from GitHub. Shorthand
+      # `actions/foo@ref` resolves to the Forgejo action mirror (data.forgejo.org),
+      # which may not include every official GitHub action.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: https://github.com/actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: https://github.com/actions/setup-node@v4
         with:
           node-version: lts/*
           cache: npm
@@ -36,10 +39,26 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      # Same layout as actions/upload-pages-artifact, but without that composite
+      # (it calls actions/upload-artifact with shorthand, which would still hit the
+      # Forgejo mirror). Pin upload-artifact to a release tag via full GitHub URL.
+      - name: Archive site for Pages
+        run: |
+          tar --dereference --hard-dereference \
+            --directory "_site" \
+            -cvf "${RUNNER_TEMP}/artifact.tar" \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=".[^/]*" \
+            .
+
+      - name: Upload Pages artifact
+        uses: https://github.com/actions/upload-artifact@v4
         with:
-          path: _site
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
 
   deploy:
     needs: build
@@ -50,4 +69,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: https://github.com/actions/deploy-pages@v4
