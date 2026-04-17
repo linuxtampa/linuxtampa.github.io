@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 2: Replicated Block Storage with Longhorn"
-date: 2026-04-06
+date: 2026-04-12
 description: Why k3s's default local-path storage doesn't cut it for real workloads, how Longhorn solves it, and the three things that went wrong before it worked correctly on heterogeneous hardware.
 published: false
 templateEngineOverride: md

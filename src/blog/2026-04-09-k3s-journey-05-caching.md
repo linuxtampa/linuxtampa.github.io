@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 5: Caching Infrastructure — Docker Registry and apt-cacher-ng"
-date: 2026-04-09
+date: 2026-05-03
 description: How a local Docker pull-through cache and an apt package cache dramatically reduce bandwidth consumption, speed up CI builds, and avoid Docker Hub rate limits — with a protocol lesson about why Traefik can't proxy apt requests.
 published: false
 templateEngineOverride: md

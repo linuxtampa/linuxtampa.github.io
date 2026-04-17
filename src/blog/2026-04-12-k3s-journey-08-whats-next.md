@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 8: What's Next — Authentication, Monitoring, Backups, and Drift Detection"
-date: 2026-04-12
+date: 2026-05-24
 description: "The cluster is running 12 services. Here's what it still needs to be genuinely production-grade: SSO for unauthenticated admin UIs, a proper observability stack, automated backups, and a working infrastructure drift detector."
 published: false
 templateEngineOverride: md

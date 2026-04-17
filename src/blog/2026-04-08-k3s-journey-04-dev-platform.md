@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 4: Self-Hosted Dev Platform — Forgejo, CI/CD, and the act_runner Saga"
-date: 2026-04-08
+date: 2026-04-26
 description: Building a self-hosted git server and GitHub Actions-compatible CI/CD pipeline on k3s — including every mistake I made with act_runner, Docker-in-Docker, and overlayfs on Longhorn volumes.
 published: false
 templateEngineOverride: md

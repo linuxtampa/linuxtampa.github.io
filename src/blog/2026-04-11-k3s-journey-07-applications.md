@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 7: Data Layer and Applications — PostgreSQL, Odoo, WireGuard, and Home Assistant"
-date: 2026-04-11
+date: 2026-05-17
 description: Running a shared PostgreSQL instance, an ERP system, a WireGuard VPN, and a smart home controller on k3s — with lessons about proxy mode, dedicated database users, CPU limits for crypto workloads, and hostNetwork for mDNS.
 published: false
 templateEngineOverride: md

@@ -1,7 +1,7 @@
 ---
 layout: blog-post.njk
 title: "k3s at Home, Part 3: TLS Everywhere with cert-manager and Traefik"
-date: 2026-04-07
+date: 2026-04-19
 description: How to get automatic wildcard HTTPS certificates for every homelab service using cert-manager, Let's Encrypt DNS-01 challenges, and GCP Cloud DNS — without exposing your cluster to the internet.
 published: false
 templateEngineOverride: md
