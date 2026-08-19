@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>LinuxTampa, LLC Blog</title>
+  <subtitle>Your Guide to OpenSource Software for Business</subtitle>
+  <link href="https://linuxtampa.com/feed.xml" rel="self"/>
+  <link href="https://linuxtampa.com/"/>
+  <updated>2026-08-12T00:00:00Z</updated>
+  <id>https://linuxtampa.com/</id>
+  <author>
+    <name>Tim Bailey Jones</name>
+    <email>hello@linuxtampa.com</email>
+  </author>
+  <entry>
+    <title>Building a Dark Mode Toggle That Plays Nice With Dark Reader</title>
+    <link href="https://linuxtampa.com/blog/2026-03-18-dark-mode-and-dark-reader/"/>
+    <updated>2026-08-12T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-03-18-dark-mode-and-dark-reader/</id>
+    <content type="html">&lt;h2&gt;Why I Care About This&lt;/h2&gt;
+&lt;p&gt;In 2022, I had life-changing eye surgery — lens replacement. Before the surgery, I could not read bright white screens without significant pain and discomfort. Dark Reader became a non-negotiable part of my browser setup. Every site I visited got inverted whether the developers intended it or not.  But sometimes a web offers a dark mode toggle but it actually conflict with DarkReader&#39;s efforts.&lt;/p&gt;
+&lt;p&gt;I&#39;m not alone. Millions of people depend on Dark Reader and similar extensions for accessibility reasons — photosensitivity, migraines, recovering from eye surgery, or simply preferring low-luminance environments. Many of them have no control over their viewing conditions. Think about screen sharing: when someone else is presenting, you&#39;re stuck with whatever theme their machine is running.&lt;/p&gt;
+&lt;p&gt;With the new artificial lens in each eye now, I can handle bright screens again — though I still prefer dark.  But the issue is still important to me, because #empathy is an important value.&lt;/p&gt;
+&lt;p&gt;But building this site gave me a fresh appreciation for the problem from the other side: what happens when &lt;em&gt;your&lt;/em&gt; site&#39;s dark mode toggle and Dark Reader are both active at the same time?&lt;/p&gt;
+&lt;p&gt;The short answer: they fight, and it looks terrible.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;When you build a dark mode toggle into your site, you&#39;re typically doing something like this:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;// Set dark mode&lt;/span&gt;
+document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;// Set light mode&lt;/span&gt;
+document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And your CSS looks like:&lt;/p&gt;
+&lt;pre class=&quot;language-css&quot;&gt;&lt;code class=&quot;language-css&quot;&gt;&lt;span class=&quot;token selector&quot;&gt;:root&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--bg-main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #fdf8f2&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--text-primary&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #2c1a0e&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;token selector&quot;&gt;[data-theme=&quot;dark&quot;]&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--bg-main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #0f150f&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--text-primary&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #00ff9f&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This works beautifully on its own. But Dark Reader works by injecting its own stylesheet into the page — it analyzes your colors, inverts them, and applies its own &lt;code&gt;data-darkreader-scheme&lt;/code&gt; attribute to &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt;. If your toggle is also active, both stylesheets are fighting over the same elements. The result is an ugly, inconsistent mess: some things are double-inverted back to light, others are a muddy combination of both themes.&lt;/p&gt;
+&lt;p&gt;The polite solution is to detect that Dark Reader is present and step aside.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Detecting Dark Reader&lt;/h2&gt;
+&lt;p&gt;Dark Reader signals its presence by adding a &lt;code&gt;data-darkreader-scheme&lt;/code&gt; attribute to the &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt; element. You can check for it directly:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;isDarkReaderActive&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
+  document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;hasAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The catch: Dark Reader injects asynchronously after the page loads. If you check at &lt;code&gt;DOMContentLoaded&lt;/code&gt;, you&#39;ll often check before DR has done anything. A simple &lt;code&gt;setTimeout&lt;/code&gt; workaround is fragile — network speed, extension load order, and browser quirks all affect timing.&lt;/p&gt;
+&lt;p&gt;The right event to catch these changes is called a &lt;code&gt;MutationObserver&lt;/code&gt;. It watches the DOM for changes and fires a callback the instant Dark Reader adds or removes its attribute — no polling, no race conditions, NO EXCUSES!&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The Solution&lt;/h2&gt;
+&lt;p&gt;Here&#39;s the complete dark mode toggle script with Dark Reader awareness built in:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; themeToggle &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getElementById&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme-toggle&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; themeToggleText &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getElementById&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme-toggle-text&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; html &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;setTheme&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token parameter&quot;&gt;theme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;theme &lt;span class=&quot;token operator&quot;&gt;===&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+      html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      themeToggleText&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;textContent &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;Light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+      html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      themeToggleText&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;textContent &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;Dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token comment&quot;&gt;// Restore saved preference on load&lt;/span&gt;
+  &lt;span class=&quot;token function&quot;&gt;setTheme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  themeToggle&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;addEventListener&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;click&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; current &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;setTheme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;current &lt;span class=&quot;token operator&quot;&gt;===&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token comment&quot;&gt;// Hide our toggle if Dark Reader is active — it&#39;s already doing the job.&lt;/span&gt;
+  &lt;span class=&quot;token comment&quot;&gt;// Use visibility:hidden instead of display:none to preserve layout spacing.&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;checkDarkReader&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; drActive &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;hasAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    themeToggle&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;style&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;visibility &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; drActive &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;hidden&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token function&quot;&gt;checkDarkReader&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;MutationObserver&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;checkDarkReader&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;observe&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;html&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token literal-property property&quot;&gt;attributes&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;token literal-property property&quot;&gt;attributeFilter&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The key decisions:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;attributeFilter: [&#39;data-darkreader-scheme&#39;]&lt;/code&gt;&lt;/strong&gt; — We&#39;re only watching for the one attribute we care about. Without this filter, the observer would fire on &lt;em&gt;any&lt;/em&gt; attribute change to &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt;, including our own &lt;code&gt;data-theme&lt;/code&gt; toggles, causing unnecessary callbacks.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;visibility: hidden&lt;/code&gt; instead of &lt;code&gt;display: none&lt;/code&gt;&lt;/strong&gt; — This is a subtle but important distinction. &lt;code&gt;display: none&lt;/code&gt; removes the element from the layout flow entirely. If your toggle button is a flex child in your nav bar, hiding it with &lt;code&gt;display: none&lt;/code&gt; collapses that slot and causes the remaining nav items to shift. &lt;code&gt;visibility: hidden&lt;/code&gt; makes the element invisible while preserving its space in the layout — the nav stays perfectly centered regardless of whether the button is visible.&lt;/p&gt;
+&lt;pre class=&quot;language-css&quot;&gt;&lt;code class=&quot;language-css&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;/* What we want — button disappears, space remains */&lt;/span&gt;
+themeToggle.style.visibility = &lt;span class=&quot;token string&quot;&gt;&#39;hidden&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;  &lt;span class=&quot;token comment&quot;&gt;/* ✓ */&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;/* What we don&#39;t want — button disappears, nav shifts */&lt;/span&gt;
+themeToggle.style.display = &lt;span class=&quot;token string&quot;&gt;&#39;none&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;       &lt;span class=&quot;token comment&quot;&gt;/* ✗ */&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The HTML&lt;/h2&gt;
+&lt;p&gt;Your toggle button just needs an ID and a text span to update:&lt;/p&gt;
+&lt;pre class=&quot;language-html&quot;&gt;&lt;code class=&quot;language-html&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;button&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;theme-toggle&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;aria-label&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;Toggle dark mode&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;
+  &lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;span&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;theme-toggle-text&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;Dark&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;/&lt;/span&gt;span&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;/&lt;/span&gt;button&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When Dark Reader is active, the button is invisible but still in the DOM, still taking up space, and the &lt;code&gt;MutationObserver&lt;/code&gt; is still watching. The moment a user disables Dark Reader, the observer fires, the button reappears, and your toggle is fully functional again.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;A Note on Accessibility&lt;/h2&gt;
+&lt;p&gt;If you&#39;re building for an audience that includes people with photosensitivity or visual impairments, a well-implemented dark mode isn&#39;t just a nice-to-have — it&#39;s a courtesy. Dark Reader exists because browsers and operating systems were late to the party on system-level dark mode, and many sites still don&#39;t respect &lt;code&gt;prefers-color-scheme&lt;/code&gt; at all.&lt;/p&gt;
+&lt;p&gt;The approach above respects the user&#39;s choice: if they&#39;ve installed Dark Reader, they&#39;ve made a deliberate decision about how they want to see the web. Your toggle doesn&#39;t fight them — it just quietly gets out of the way.&lt;/p&gt;
+&lt;p&gt;If you want to go further, you can also respect the system preference on first load by checking &lt;code&gt;prefers-color-scheme&lt;/code&gt; before falling back to your saved &lt;code&gt;localStorage&lt;/code&gt; value:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;getInitialTheme&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; saved &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;saved&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; saved&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; window&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;matchMedia&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;(prefers-color-scheme: dark)&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;matches
+    &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;
+    &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Small things. Big difference for the people who need them.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Update: Now an npm Package&lt;/h2&gt;
+&lt;p&gt;I liked this pattern enough that I pulled it out of this site and turned it into a proper package: &lt;a href=&quot;https://github.com/timbaileyjones/dark-reader-aware-theme-toggle-button&quot;&gt;&lt;code&gt;dark-reader-aware-theme-toggle-button&lt;/code&gt;&lt;/a&gt; (&lt;a href=&quot;https://www.npmjs.com/package/dark-reader-aware-theme-toggle-button&quot;&gt;npm&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;It&#39;s the same idea as above, hardened a bit further — it checks all four DOM signals Dark Reader can leave behind (dynamic &lt;em&gt;and&lt;/em&gt; filter/static modes, not just &lt;code&gt;data-darkreader-scheme&lt;/code&gt;), ships TypeScript types, and has zero runtime dependencies. Both this site and &lt;a href=&quot;https://bailey-jones.com/&quot;&gt;bailey-jones.com&lt;/a&gt; run on it now.&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;npm&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;install&lt;/span&gt; dark-reader-aware-theme-toggle-button&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; mountThemeToggleButton &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark-reader-aware-theme-toggle-button&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark-reader-aware-theme-toggle-button/styles/toggle-button.css&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token function&quot;&gt;mountThemeToggleButton&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token literal-property property&quot;&gt;button&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;#theme-toggle&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token literal-property property&quot;&gt;label&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;#theme-toggle-text&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Everything else on this page — the reasoning, the &lt;code&gt;MutationObserver&lt;/code&gt;, the &lt;code&gt;visibility: hidden&lt;/code&gt; trick — still holds. The package just saves you from copy-pasting it into every project.&lt;/p&gt;
+</content>
+    <summary>How to detect the Dark Reader browser extension and gracefully step aside — with a MutationObserver, a one-liner CSS trick, and a lesson I learned the hard way about why this actually matters.</summary>
+  </entry>
+  <entry>
+    <title>Starting Fresh: Why I Launched LinuxTampa</title>
+    <link href="https://linuxtampa.com/blog/2026-03-10-hello-world/"/>
+    <updated>2026-03-10T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-03-10-hello-world/</id>
+    <content type="html">&lt;p&gt;After more than three decades writing software for large organizations, I recently made the leap to independent consulting under the banner of &lt;strong&gt;LinuxTampa, LLC&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;This wasn&#39;t entirely by choice — the W-2 market has been brutal lately, and I&#39;m far from alone in that experience. But the more I&#39;ve leaned into contract work, the more I&#39;ve realized it suits me. I get to pick interesting problems, work with a wider range of technology stacks, and spend less time in status meetings.&lt;/p&gt;
+&lt;h2&gt;What LinuxTampa Is&lt;/h2&gt;
+&lt;p&gt;LinuxTampa is my vehicle for helping businesses get real value out of open source technology and cloud infrastructure. The name reflects where I live and what I&#39;ve built my career on: Linux, in all its forms, from embedded systems to enterprise cloud.&lt;/p&gt;
+&lt;p&gt;Over the years I&#39;ve worked across a wide range of domains — telecommunications, financial services, defense, robotics, AI validation. The common thread has been Linux, automation, and a preference for building things that actually last.&lt;/p&gt;
+&lt;h2&gt;What to Expect Here&lt;/h2&gt;
+&lt;p&gt;This blog is where I&#39;ll share:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Stories from the field&lt;/strong&gt; — the real challenges and how we solved them&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Technical deep dives&lt;/strong&gt; — infrastructure, DevOps, cloud architecture&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Career observations&lt;/strong&gt; — what&#39;s changing in the industry for experienced engineers&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;More posts coming soon. If you want to talk about a project, &lt;a href=&quot;https://linuxtampa.com/contact&quot;&gt;get in touch&lt;/a&gt;.&lt;/p&gt;
+</content>
+    <summary>After 30+ years in corporate software development, I&#39;m going independent. Here&#39;s what that looks like and why open source is at the center of it.</summary>
+  </entry>
+  <entry>
+    <title>What I&#39;m Looking For in Future Work</title>
+    <link href="https://linuxtampa.com/blog/2025-05-10-future-work/"/>
+    <updated>2025-05-10T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2025-05-10-future-work/</id>
+    <content type="html">&lt;h2&gt;What I offer&lt;/h2&gt;
+&lt;p&gt;I have been working with AWS Cloud technologies heavily since 2017, and more recently with GCP (Google Cloud Platform).  Before that, I developed many applications going back to the early 1990s.  I&#39;m proficient in front-end, back-end, and cloud, and I am at my best in a role where I can contribute on all three fronts.&lt;/p&gt;
+&lt;p&gt;My canonical resume is on &lt;a href=&quot;https://linkedin.com/in/timbaileyjones&quot;&gt;my LinkedIn page&lt;/a&gt;, and &lt;a href=&quot;https://linuxtampa.com/about&quot;&gt;a skill summary is here&lt;/a&gt;, but I&#39;ll go over the broad strokes.&lt;/p&gt;
+&lt;h3&gt;What I hate to work with&lt;/h3&gt;
+&lt;p&gt;I don&#39;t have a lot of no-go zones, so let&#39;s get them out of the way first.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Microsoft Windows&lt;/li&gt;
+&lt;li&gt;WSL2&lt;/li&gt;
+&lt;li&gt;Oracle&lt;/li&gt;
+&lt;li&gt;J2EE&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;What I love to work with&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Linux&lt;/strong&gt; &lt;br /&gt;
+I have been a nearly-daily Linux user and developer since &lt;a href=&quot;https://en.wikipedia.org/wiki/Yggdrasil_Linux/GNU/X&quot;&gt;Fall &#39;94 Yggdrasil Linux&lt;/a&gt;.  I have built many custom PCs for Linux Desktop use over the years.  I was a RedHat guy until 1999, then switched to Debian, and Ubuntu.  I have toyed around with a bunch of other distros, but mostly prefer Ubuntu over CentOS/RHEL/AmazonLinux.&lt;/p&gt;
+&lt;p&gt;Today, most cloud workloads are Linux-based, from tiny docker containers to entire virtual machines, along with most IaaS/PaaS/SaaS offerings.  MacOSX has been Linux-like for many years, and even Microsoft has finally embraced the Linux way (WSL2).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Cloud Computing&lt;/strong&gt; &lt;br /&gt;
+Despite having acquired a boatload of Cloud Skills since 2017, I recognize there are still legitimate requirements and demand for on-prem/local servers.  Between 1992 and 2016, I worked entirely for companies that operated entirely from data centers and machines in their local headquarters, and in one case, even shipped physical rack-server units with custom apps pre-installed.  I still possess those local Linux sysadmin and networking skill sets, and am open to doing this kind of work again.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;AWS&lt;/strong&gt; &lt;br /&gt;
+Since 2017, I have passed &lt;a href=&quot;https://aw.certmetrics.com/amazon/public/verification.aspx&quot;&gt;3 AWS certifications over the years&lt;/a&gt; (DevOps Pro, Solutions Architect, Developer Associate) &lt;small&gt;(credential SFJZ9X8J1FRQ1HSV)&lt;/small&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;GCP&lt;/strong&gt; &lt;br /&gt;
+Since 2022, I began working with Google Cloud Platform, and vastly prefer it for speed, ease of use, more Unix-like tooling, and much lower costs.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Terraform / OpenTofu&lt;/strong&gt; &lt;br /&gt;
+At first, I learned AWS using CloudFormation for IaC (Infrastructure as Code). Later, I learned the far superior (and portable!) tooling of Terraform, and after that, it became an easy way to become productive with Google Cloud Platform, Azure, and even other services that are not full cloud providers.  &lt;a href=&quot;https://registry.terraform.io/browse/providers&quot;&gt;(Okta, DigitalOcean, GitLab, Kubernetes, all other Hashicorp products among them)&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Digital Ocean&lt;/strong&gt; — I love these small developer-oriented cloud services. They work with Terraform too!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Before 2017, all my experience was with on-premises servers. I am comfortable with server hardware and Linux system administration.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Backend Development&lt;/strong&gt; &lt;br /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I worked with most of the major programming languages over the years, from C/C++ back in the 1990s, to Java, Python, JavaScript/TypeScript/Node, GoLang, and Java Servlets.  Of these, I have come to value GoLang the most.&lt;/li&gt;
+&lt;li&gt;I have written many applications that interface to large RDBMS systems, including Postgres, MySQL, Vertica DB, MS SQL Server, and Informix, through ODBC and JDBC connections.&lt;/li&gt;
+&lt;li&gt;I am fluent in SQL, query tuning/optimization for a few databases, and database administration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Frontend Development&lt;/strong&gt; &lt;br /&gt;
+I saw my &lt;a href=&quot;https://en.wikipedia.org/wiki/Netcom_(United_States)&quot;&gt;first webpage in 1991 on NetCom&lt;/a&gt;, and have been writing web applications ever since. Today, I am fluent in React, and for legacy sites that aren&#39;t React, I find that jQuery is still quite relevant.
+I have generated lots of HTML content with Java Server Pages, PHP, and ColdFusion.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What I look for&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Full-time / Remote Work&lt;/strong&gt; &lt;br /&gt;
+In addition to the usual advantages of remote work, I get unparalleled peace and quiet working from my rural property.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Variety&lt;/strong&gt; &lt;br /&gt;
+I do my best work on small teams that truly embrace DevOps, where each contributor shares responsibility for design, development, testing, deployment, monitoring, and iteration planning.  With my very long experience with front-end and back-end development (since 1992), and several years of AWS/GCP work, I look forward to wearing many different hats.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Unfortunately, in some environments, the term &lt;strong&gt;devops&lt;/strong&gt; has become a misused term that describes a team that only works on infrastructure, and doesn&#39;t actually develop the application.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I have spent a lot of time in consulting, and that gives me the chance to work in multiple client teams, working practices, and tech stacks.  I don&#39;t really care what industry I&#39;m working in, because it is the art of building software that interests me above all else.  However, I also love building products intended for external consumption, particularly if it is published under &lt;a href=&quot;https://opensource.org/licenses/&quot;&gt;an OSI-approved license&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Social Responsibility&lt;/strong&gt; &lt;br /&gt;
+Like most developers, I believe in &lt;a href=&quot;https://online.hbs.edu/blog/post/types-of-corporate-social-responsibility&quot;&gt;corporate social responsibility&lt;/a&gt;, and would be attracted to organizations that promote causes like:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Universal broadband / access for rural areas &amp;amp; the disadvantaged.&lt;/li&gt;
+&lt;li&gt;Better healthcare access &amp;amp; outcomes.&lt;/li&gt;
+&lt;li&gt;More access to higher education, voting and civic opportunities.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Conversely, I would not consider working in fossil fuels, polluters, gambling, misinformation, exploitation of others, etc.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    <summary>My tech stack preferences, work environment requirements, and values — what you get when you hire me and what I look for in a good engagement.</summary>
+  </entry>
+  <entry>
+    <title>Every Site I&#39;ve Ever Run — A History Since 1998</title>
+    <link href="https://linuxtampa.com/blog/2023-09-03-sites-overview/"/>
+    <updated>2023-09-03T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2023-09-03-sites-overview/</id>
+    <content type="html">&lt;p&gt;I have owned and operated a number of websites over the years. Here is a list of them, with a brief description of each.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://bailey-jones.com/&quot;&gt;bailey-jones.com&lt;/a&gt; — my personal/music site, started in 2019. It is a static site built with Eleventy.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://paperprinciples.com/&quot;&gt;paperprinciples.com&lt;/a&gt; — a website for my late wife&#39;s origami crafts. It is a static site, with embedded youtube videos we recorded together.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://gotonight.com/&quot;&gt;gotonight.com&lt;/a&gt; — a website for a startup I worked for, started in 2012. It was written in Coldfusion, and has been redeveloped in React.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://tuckasee.com/&quot;&gt;tuckasee.com&lt;/a&gt; — This is a site for my father&#39;s fine handcrafted bowed psalteries and hammered dulcimers.   He retired many years ago, and passed away in March 2026, but I keep this site up as a tribute to him.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://sunshinebrass.com/&quot;&gt;sunshinebrass.com&lt;/a&gt; — a website for a brass band, started in 2005. It was written in PHP, and is now a static site.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://gasparbrass.com/&quot;&gt;gasparbrass.com&lt;/a&gt; — a website for my brass quintet, started in 2005. It was written in PHP, and is now a static site.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://adamjones.tech/&quot;&gt;adamjones.tech&lt;/a&gt; — my son&#39;s website, started in 2019. It is a static site, done in React.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://timjones.com/&quot;&gt;timjones.com&lt;/a&gt; — my personal website, started in 2015. Now redirects to bailey-jones.com.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://tampabaybrass.com/&quot;&gt;tampabaybrass.com&lt;/a&gt; — a website for a brass quintet, started in 2000.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://carrollwoodbrass.com/&quot;&gt;carrollwoodbrass.com&lt;/a&gt; — a website for a brass ensemble, started in 2012.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    <summary>A running list of the websites I&#39;ve owned and operated since 1998 — from Perl scripts on shared hosting to GCP-deployed static sites.</summary>
+  </entry>
+</feed>

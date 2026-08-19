@@ -1,0 +1,465 @@
+/* Basic reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --navy: #2c1a0e;
+  --teal: #b84c1a;
+  --orange: #b84c1a;
+  --warm-gray: #f5ede3;
+  --bg-gray: #ede4d8;
+  --text-dark: #2c1a0e;
+  --text-light: #7a5c4a;
+
+  /* Light theme (default) */
+  --bg-body: #ede4d8;
+  --bg-main: #fdf8f2;
+  --bg-header: var(--navy);
+  --bg-footer: #f5ede3;
+  --text-primary: #2c1a0e;
+  --text-secondary: #7a5c4a;
+  --text-inverse: #fdf8f2;
+  --shadow: rgba(44, 26, 14, 0.12);
+  --link-hover: #ffd700;
+  --link-hover-bg: #2c1a0e;
+}
+
+[data-theme="dark"] {
+  /* Dark theme — terminal hacker */
+  --navy: #001a0d;
+  --teal: #00ff9f;
+  --bg-body: #0a0f0a;
+  --bg-main: #0f150f;
+  --bg-header: #060a06;
+  --bg-footer: #0a0f0a;
+  --text-primary: #00ff9f;
+  --text-secondary: #00994d;
+  --text-inverse: #00ff9f;
+  --shadow: rgba(0, 255, 159, 0.05);
+  --link-hover: #ffd700;
+  --link-hover-bg: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-body);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a, a:visited {
+  color: var(--teal);
+}
+a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+  opacity: 1;
+}
+
+[data-theme="dark"] main a,
+[data-theme="dark"] main a:visited {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+}
+
+/* Navigation */
+body > header {
+  background: var(--bg-header);
+  color: var(--text-inverse);
+  padding: 1rem 0;
+  transition: background-color 0.3s ease;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto !important;
+  padding: 0 2rem;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center;
+  width: 100%;
+}
+
+.logo img {
+  height: 40px;
+}
+
+.wordmark {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+}
+
+.nav-links a {
+  color: var(--text-inverse);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--text-inverse);
+  color: var(--text-inverse);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-links a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+  opacity: 1;
+}
+
+/* Carousel */
+.carousel {
+  float: right;
+  width: 40%;
+  max-width: 480px;
+  aspect-ratio: 1 / 1;
+  margin: 0 0 1rem 2rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.4s ease;
+}
+
+.carousel-slide {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.carousel-slide.headshot {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 8px solid var(--teal);
+  box-sizing: border-box;
+}
+
+.carousel-btn {
+  position: absolute;
+  bottom: 0.4rem;
+  transform: none;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  border-radius: 4px;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.carousel-btn:hover {
+  background: rgba(0,0,0,0.7);
+}
+
+.carousel-btn.prev { left: 0.4rem; }
+.carousel-btn.next { right: 0.4rem; }
+
+.carousel-dots {
+  position: absolute;
+  bottom: 0.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.carousel-dot.active {
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .carousel {
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto 2rem auto;
+  }
+}
+
+/* Indent the lead paragraph under each section heading */
+.page-services h3 + p,
+.page-small-business h3 + p {
+  padding-left: 1.5rem;
+}
+
+/* Lists */
+main ul, main ol {
+  margin: 0.5rem 0 1rem 2rem;
+  padding-left: 1rem;
+}
+
+main li {
+  margin-bottom: 0.25rem;
+}
+
+/* Main content */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 200px);
+  background: var(--bg-main);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow);
+  overflow: auto; /* Clearfix for floated elements */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Logo floating right */
+.linuxtampa-logo {
+  float: right;
+  max-width: 40%;
+  height: auto;
+  max-height: 400px;
+  width: auto;
+  margin: 0 0 1rem 2rem;
+}
+
+/* Footer */
+footer {
+  background: var(--bg-footer);
+  padding: 2rem 0;
+  margin-top: 4rem;
+  transition: background-color 0.3s ease;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-links a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+  text-decoration: underline;
+}
+
+/* Responsive */
+/* Blog */
+.blog-index h1 {
+  margin-bottom: 0.5rem;
+}
+.blog-intro {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+.post-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.post-item .post-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  text-decoration: none;
+  color: var(--teal);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+[data-theme="dark"] .post-item .post-link {
+  color: inherit;
+}
+.post-item a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+}
+.post-item a:hover .post-title {
+  text-decoration: underline;
+}
+.post-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: normal;
+}
+.post-excerpt {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+.post-tags {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tag {
+  background: var(--navy);
+  color: #d4a840;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  text-decoration: none;
+}
+.tag:hover {
+  background: var(--teal);
+  color: #fff;
+}
+[data-theme="dark"] .tag {
+  background: #001a0d;
+  color: #00ff9f;
+}
+[data-theme="dark"] .tag:hover {
+  background: #00ff9f;
+  color: #0a0f0a;
+}
+.updates-list {
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.updates-list .post-item .post-link {
+  font-size: 1rem;
+  flex-wrap: nowrap;
+}
+.updates-list .post-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.rss-link {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+.rss-link a {
+  color: var(--orange);
+}
+.rss-link a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+}
+
+/* Blog post */
+.blog-post .post-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--shadow);
+}
+.blog-post h1 {
+  margin-bottom: 0.5rem;
+}
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.post-description {
+  margin-top: 0.75rem;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.post-content h2 {
+  margin: 2rem 0 0.75rem;
+}
+.post-content p {
+  margin-bottom: 1rem;
+}
+.post-content ul, .post-content ol {
+  margin: 0 0 1rem 1.5rem;
+}
+.post-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--shadow);
+}
+.post-footer a {
+  color: var(--teal);
+  text-decoration: none;
+}
+.post-footer a:hover {
+  color: var(--link-hover);
+  background-color: var(--link-hover-bg);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .nav-links {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .footer-container {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .linuxtampa-logo {
+    float: none;
+    max-width: 100%;
+    max-height: 250px;
+    margin: 0 auto 2rem auto;
+    display: block;
+  }
+  
+  .theme-toggle {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}
+

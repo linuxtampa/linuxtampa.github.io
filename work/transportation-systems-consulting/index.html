@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSC — Transportation Systems Consulting (1992–1995) | LinuxTampa, LLC</title>
+  <meta name="description" content="Early career developing cross-platform Unix software for airline maintenance management before the internet era.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>TSC — Transportation Systems Consulting (1992–1995)</h1>
+<p>TSC was one of my first serious programming jobs. The company was founded by George D.S. Andrews, a British aviation enthusiast who built a software suite for the airline industry called <strong>AMIS-2000</strong>.</p>
+<h2>What AMIS-2000 Did</h2>
+<p>AMIS-2000 was an integrated suite of Unix terminal-based software to manage aircraft maintenance — tracking costly downtime and producing compliance documentation for the FAA and UK CAA. The software ran on virtually every Unix variant of the era: Solaris, HP/UX, Apple UX, SCO Unix, UnixWare, Sequent/Dynix, and IBM AIX.</p>
+<p>Modules included:</p>
+<ul>
+<li>Aircraft Maintenance Status and Performance</li>
+<li>Planning and Control</li>
+<li>Rotables / Repairables / Tools Management</li>
+<li>Strategic Documents Management</li>
+<li>Material Controls and Inventory Management</li>
+<li>Work Orders and Cost Control</li>
+<li>Purchasing and Repairs Management</li>
+<li>Personnel / Training / Tech Docs Management</li>
+<li>Financial Management</li>
+<li>Aircraft Operations and Management</li>
+</ul>
+<p>The UI was terminal-based (curses library, 80x24 character grid on the terminal). &quot;Workstations&quot; were <a href="https://terminals-wiki.org/wiki/index.php/Wyse_WY-60">WYSE WY-60 serial terminals</a> attached directly to a Sequent minicomputer — no PCs, no laptops. Everyone was logged into the same time-shared system simultaneously. When someone kicked off a compile, everyone felt it.</p>
+<p>Software was distributed on quarter-inch QIC tape cartridges in tar format, and physically mailed around the world. Pre-Internet.</p>
+<h2>Source Code Control</h2>
+<p>No git, no Subversion. We used <a href="https://en.wikipedia.org/wiki/Source_Code_Control_System">SCCS</a> — version history per file, no concept of branches, no renames, no atomic commits. Replication across systems was done with <code>rcp</code> or <code>rsync</code>. Truly stone knives and bear skins.</p>
+<h2>Pre-Internet Communication</h2>
+<p>Internal chat was via the Unix <code>talk</code> program. External email used a shared <code>uunet</code> account over <code>uucp</code>. Email addresses used the now-extinct <a href="http://www.catb.org/jargon/html/B/bang-path.html">bang-path format</a> — mine was <code>...uunet!roscoe!tim</code>.</p>
+<h2>Why This Matters</h2>
+<p>Working in this environment built a deep instinct for portability, resource efficiency, and writing code that runs on anything. The constraints of shared iron, 80x24 UIs, and pre-internet networking shaped how I think about systems to this day.</p>
+<p><a href="/work/">← Back to Work</a></p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+
