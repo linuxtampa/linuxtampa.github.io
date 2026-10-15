@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Let Claude Keep the Wiki: Weekly Documentation from Merge Requests, Commits, and Issues | LinuxTampa, LLC</title>
+  <meta name="description" content="A ~350-line bash script that feeds a week of commits, merged MRs, and issues to headless Claude and pushes the result to every GitLab project wiki, with git trailers as the only state.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <article class="blog-post">
+  <header class="post-header">
+    <h1>Let Claude Keep the Wiki: Weekly Documentation from Merge Requests, Commits, and Issues</h1>
+    <div class="post-meta">
+      <time datetime="2026-10-10">October 10, 2026</time>
+      
+      <span class="post-tags">
+        
+          
+        
+          
+          <a href="/tags/gitlab/" class="tag">gitlab</a>
+          
+        
+          
+          <a href="/tags/claude/" class="tag">claude</a>
+          
+        
+          
+          <a href="/tags/documentation/" class="tag">documentation</a>
+          
+        
+          
+          <a href="/tags/devops/" class="tag">devops</a>
+          
+        
+          
+          <a href="/tags/bash/" class="tag">bash</a>
+          
+        
+          
+          <a href="/tags/automation/" class="tag">automation</a>
+          
+        
+          
+          <a href="/tags/mermaid/" class="tag">mermaid</a>
+          
+        
+      </span>
+      
+    </div>
+    
+    <p class="post-description">A ~350-line bash script that feeds a week of commits, merged MRs, and issues to headless Claude and pushes the result to every GitLab project wiki, with git trailers as the only state.</p>
+    
+  </header>
+
+  <div class="post-content">
+    <h2>The Problem Nobody Wants to Own</h2>
+<p>Every team I've worked with has the same wiki: lovingly written in month one, quietly wrong by month six. Nobody decides to let it rot. The code just changes faster than anyone has time to write about it.</p>
+<p>At one of my clients, I decided to stop relying on willpower. About once a week I run a script that reads what actually happened in each repo (commits, merged merge requests, issues opened and closed) and asks Claude to update the wiki to match. So far it works better than I expected.</p>
+<hr>
+<h2>The Shadow Wiki Trick</h2>
+<p>GitLab gives every project a wiki, and that wiki is itself a git repository. If your project lives at <code>gitlab.example.com/group/infrastructure-terraform</code>, the wiki is cloned from <code>gitlab.example.com/group/infrastructure-terraform.wiki.git</code>.</p>
+<p>That detail does most of the work for us:</p>
+<ul>
+<li>The wiki is just markdown files in a git repo, so there's no special API to learn.</li>
+<li>Pushing to it is a normal <code>git push</code>.</li>
+<li>Git history gives us an audit trail of every documentation change for free.</li>
+<li>Git commit trailers give us somewhere to keep state (more on that below).</li>
+</ul>
+<hr>
+<h2>What Comes Out</h2>
+<p>The output is what sold me. Claude doesn't just paraphrase commit messages. It writes pages that look like someone cared:</p>
+<ul>
+<li><strong>Markdown tables</strong> for inventories: environments, modules, variables, services.</li>
+<li><strong><a href="https://mermaid.js.org/">Mermaid</a> diagrams</strong> for architecture and flow, which GitLab renders natively in wikis.</li>
+<li><strong>A change history</strong> that records <em>when</em> something changed, <em>who</em> changed it, and a link to the <strong>MR</strong> that did it.</li>
+</ul>
+<p>That last one is the part I value most. The &quot;why did this change?&quot; question now has a clickable answer sitting next to the documentation itself.</p>
+<hr>
+<h2>How the Script Works</h2>
+<p>The design principle is that <strong>the script does everything deterministic, and Claude does only the writing.</strong> Claude never touches the network, never runs git, and never sees a source repo checkout.</p>
+<h3>1. State lives in the wiki itself</h3>
+<p>I didn't want a database, a state file, or a cron-host dotfile to get out of sync. Instead, each sync commit to the wiki carries git trailers:</p>
+<pre><code>wiki-sync: 23 commits, 4 merged MRs, 2 issues since 2026-10-08T14:02:11Z
+
+Synced-Branch: main 3f9c1e0a...
+Synced-Branch: release 9b77d412...
+Synced-Through: 2026-10-15T13:58:40Z
+</code></pre>
+<p><code>Synced-Branch</code> records the last commit digested on each tracked branch. <code>Synced-Through</code> is a timestamp cursor for issues and MRs. The next run finds the newest commit carrying these trailers with <code>git log --format='%(trailers:...)'</code> and picks up from there.</p>
+<p>The important property: <strong>the cursor only advances in the same push as the pages it describes.</strong> If anything fails halfway, nothing moves, and the next run re-covers the same ground.</p>
+<h3>2. Build a digest</h3>
+<p>For each repo, the script assembles one markdown digest:</p>
+<ul>
+<li><strong>Commits</strong> since the cursor on each tracked branch, oldest first, each with its message, a <code>--stat</code>, and a capped diff excerpt (150 lines per commit, with lockfiles, <code>vendor/</code>, minified assets and source maps excluded). There's a hard cap on commits per run and a total byte budget for diffs so a monster week doesn't blow up the context window.</li>
+<li><strong>Merged MRs</strong> from the GitLab API, with author, source and target branch, and a trimmed description.</li>
+<li><strong>Issues</strong> created or closed in the window, with labels and state.</li>
+</ul>
+<p>Two details earned their keep:</p>
+<ul>
+<li><strong>Cherry-pick de-duplication.</strong> If the same fix lands on <code>main</code> and a release branch, it would otherwise be described twice. The script computes <code>git patch-id --stable</code> for each commit and drops repeats.</li>
+<li><strong>Cursor fallback.</strong> If someone force-pushes and the stored SHA is no longer an ancestor of the branch tip, the script falls back to a time-based <code>--since</code> instead of failing.</li>
+</ul>
+<h3>3. Run Claude headless and locked down</h3>
+<p>The digest is appended to a prompt template and piped into <code>claude -p</code>, run from inside the wiki checkout:</p>
+<pre class="language-bash"><code class="language-bash">claude <span class="token parameter variable">-p</span> --permission-mode dontAsk <span class="token punctuation">\</span>
+  <span class="token parameter variable">--allowedTools</span> Read Edit Write Glob Grep</code></pre>
+<p>That's the entire tool allowlist: read, edit, write, and search, with no Bash and no network. Claude can only touch files in the wiki clone.</p>
+<p>I use a dedicated <code>CLAUDE_CONFIG_DIR</code> so the client work runs under its own login and settings, separate from my personal setup.</p>
+<h3>4. Don't trust, sanitize</h3>
+<p>After Claude finishes, a <code>sanitize_wiki</code> step reverts anything the script doesn't accept: any changed file that isn't <code>.md</code>, and any deleted page. Belt and suspenders on top of the tool allowlist.</p>
+<p>If Claude exits non-zero, the script resets the wiki checkout to clean and reports a failure. Half-written documentation never gets committed.</p>
+<h3>5. Commit and push</h3>
+<p>The commit message is a one-line summary of counts, then Claude's own summary of what it changed (trimmed), then the trailers, plus a <code>Co-Authored-By: Claude</code> line so it's honest about who wrote what. The script pushes, and if the push is rejected it rebases once and retries.</p>
+<hr>
+<h2>Small Safety Features That Matter</h2>
+<p>None of these are clever, but together they make a weekly manual run something I trust:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flock</code> on a lock file</td>
+<td>One run at a time per machine</td>
+</tr>
+<tr>
+<td><code>.updating</code> marker in the wiki</td>
+<td>A human or another session editing that wiki blocks the run; stale after 2 hours</td>
+</tr>
+<tr>
+<td>Refuses to run with a dirty wiki checkout</td>
+<td>Never mixes my hand edits with generated ones</td>
+</tr>
+<tr>
+<td><code>--ff-only</code> merge before starting</td>
+<td>Fails loudly if the wiki diverged from origin</td>
+</tr>
+<tr>
+<td>Once-per-day rule (<code>--force</code> to override)</td>
+<td>Prevents accidental double runs</td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Builds every digest and prints sizes; no Claude, no commit</td>
+</tr>
+<tr>
+<td><code>--keep</code></td>
+<td>Preserves digests, prompts and Claude's raw output for debugging</td>
+</tr>
+<tr>
+<td>Per-repo exit status summary</td>
+<td><code>updated</code>, <code>skipped</code>, <code>nothing new</code>, or <code>FAILED</code> at a glance</td>
+</tr>
+</tbody>
+</table>
+<p>The summary at the end looks like:</p>
+<pre><code>api-gateway                      updated
+infrastructure-terraform         updated
+legacy-batch-jobs                nothing new
+shared-modules                   skipped
+</code></pre>
+<hr>
+<h2>What I'd Tell You Before You Try This</h2>
+<ul>
+<li><strong>Pass in facts, not hopes.</strong> Claude is good at turning a diff and an MR description into prose and tables. It's much worse at guessing what happened. Every claim in the wiki traces back to something in the digest, which is why the digest includes links.</li>
+<li><strong>Cap everything.</strong> Commits, diff lines, description lengths, total bytes. Context is finite, and bounded input makes the cost and runtime predictable.</li>
+<li><strong>Keep the prompt in a file under version control.</strong> Mine is a template with placeholders for the repo, date range and branches. Tuning documentation style is just editing markdown.</li>
+<li><strong>Seed the wiki first.</strong> The script refuses to run without a baseline sync commit. The first generation is a different, larger job; weekly updates are incremental.</li>
+<li><strong>Review it, at least at first.</strong> Because the wiki is a git repo, <code>git show</code> on the sync commit is the review. I skim the diff after each run.</li>
+</ul>
+<hr>
+<h2>Why It Works</h2>
+<p>It isn't magic. It works because the pieces are boring: git as the database, trailers as the cursor, the GitLab API for the facts, and a model confined to editing markdown files. The model does the one thing it's good at, which is turning a pile of change records into readable documentation, and everything that could go wrong is handled by plain shell around it.</p>
+<p>The wiki goes from &quot;stale by default&quot; to &quot;current as of last Tuesday,&quot; and for about thirty minutes of babysitting a week, I'll take that trade.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <a href="/blog/">&larr; Back to Blog</a>
+  </footer>
+</article>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Study 1 | LinuxTampa, LLC</title>
+  <meta name="description" content="Example case study">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Case Study: Legacy Codebase Migration for Amazon Robotics</h1>
+<h2>Overview</h2>
+<p>Amazon Robotics needed to modernize their infrastructure by migrating legacy codebases to AWS while maintaining zero downtime. The project involved migrating TypeScript, Golang, and Java applications, upgrading database infrastructure, and implementing modern deployment practices.</p>
+<p><strong>Client:</strong> Amazon Robotics, Toronto, Canada<br>
+<strong>Project Duration:</strong> 1 year (July 2024 - July 2025)<br>
+<strong>Technologies Used:</strong> AWS CDK, TypeScript, Golang, Java, AWS Lambda, Amazon Aurora, RDS</p>
+<h2>Challenge</h2>
+<p>The client was running critical robotics applications on legacy infrastructure with several challenges:</p>
+<ul>
+<li>Multiple legacy codebases in TypeScript, Golang, and Java requiring migration</li>
+<li>Need for zero-downtime migration to avoid disrupting operations</li>
+<li>Outdated database infrastructure (Aurora/MySQL 5.7) limiting performance and scalability</li>
+<li>Manual deployment processes slowing down development velocity</li>
+<li>Looming financial penalty in staying on old RDS Engine versions</li>
+</ul>
+<p>The migration needed to be completed without disrupting daily operations, and the infrastructure needed to support future growth and scalability requirements.</p>
+<h2>Solution</h2>
+<p>I executed a comprehensive migration strategy:</p>
+<ol>
+<li>
+<p><strong>Infrastructure as Code:</strong> Used AWS CDK construct library and internal Amazon build tools to orchestrate infrastructure deployments, ensuring reproducibility and version control</p>
+</li>
+<li>
+<p><strong>Phased Migration:</strong> Planned, coded, tested, and executed migrations of legacy codebases in stages, starting with lower-risk components to validate the approach, and to limit risk until I reach full technical fluency with the pipeline environment</p>
+</li>
+<li>
+<p><strong>Database Modernization:</strong> Upgraded RDS cluster engines from Aurora/MySQL 5.7 to 8.0, improving performance, scalability, and reducing costs</p>
+</li>
+<li>
+<p><strong>Zero-Downtime Strategy:</strong> Implemented blue-green deployment patterns and careful migration sequencing to ensure continuous availability</p>
+</li>
+<li>
+<p><strong>Performance Optimization:</strong> Made additional improvements to increase throughput, fix bugs, and optimize costs throughout the migration process.  Right-sized instance sizes using historical usage data.  Along the way, I found that MySQL 8 is much stricter about literal timestamp patterns than MySQL 5.  Several Lambdas required additional changes when constructing WHERE clauses involving time ranges.</p>
+</li>
+<li>
+<p><strong>Automation:</strong> Leveraged existing deployment pipelines to ensure these deployments were as smooth as routine deployments.</p>
+</li>
+</ol>
+<h2>Results</h2>
+<ul>
+<li><strong>Zero downtime</strong> achieved during the entire migration process</li>
+<li><strong>Improved scalability</strong> through database engine upgrades and infrastructure modernization</li>
+<li><strong>Reduced costs</strong> through RDS cluster optimization and infrastructure efficiency improvements</li>
+<li><strong>Enhanced throughput</strong> and performance for critical robotics applications</li>
+<li><strong>Faster deployments</strong> through automated CI/CD processes</li>
+<li><strong>Future-ready infrastructure</strong> that supports continued growth and development</li>
+</ul>
+<p>The Warehouse Fulfillment applications now has a modern, scalable AWS infrastructure that supports their operations with improved performance, reliability, and cost efficiency.</p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impulse Point — SafeConnect (2016–2017) | LinuxTampa, LLC</title>
+  <meta name="description" content="Migrated 130+ Subversion repositories to Git and modernized the build pipeline for a network access control product.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Impulse Point — SafeConnect (2016–2017)</h1>
+<p>Impulse Point made <a href="https://roi4cio.com/catalog/product/impulse-safeconnect">SafeConnect</a>, a network access control product deployed as a 1U rackmount server at client sites. Day one set the tone:</p>
+<blockquote>
+<p>&quot;Here's a Dell workstation with 16G and 1TB drive. Configure it any way you want.&quot;</p>
+</blockquote>
+<p>An hour later: Kubuntu Linux, all dev tools, company repos cloned and building locally. A Linux geek's dream.</p>
+<h2>Stack</h2>
+<ul>
+<li><strong>Frontend:</strong> Angular 1.x (predates the modern TypeScript-based Angular)</li>
+<li><strong>Backend:</strong> Java/WAR deployed on Tomcat (RHEL 7 packaged version)</li>
+<li><strong>Build:</strong> Atlassian Bamboo, producing RPM packages hosted on a public RPM repo</li>
+<li><strong>Deployment:</strong> Client sites updated via standard <code>yum upgrade</code></li>
+</ul>
+<h2>SVN → Git Migration</h2>
+<p>When I joined in 2016, Impulse Point's code was in Subversion. They wanted to move to Git and hosted Atlassian Bitbucket. Having done svn→git migrations previously at Syniverse, I was a natural fit for the task.</p>
+<p>I wrote a bash script that walked each of their <strong>130+ repositories</strong> through the full migration process automatically. One script, 130 repos, done.</p>
+<p>The real win wasn't just the migration itself — it was gaining access to the entire ecosystem of Git-based tooling that the rest of the industry had already moved to. Nobody was building integrations for SVN anymore.  And even git's competition like perforce &amp; mercurial are all-but-forgotten now.</p>
+<p><a href="/work/">← Back to Work</a></p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CandidPartners → McKinsey (2020–2021) | LinuxTampa, LLC</title>
+  <meta name="description" content="DevOps engineering for a large payment processor and a federal reserve bank, including cross-region CloudFront optimization and serverless log analytics.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>CandidPartners → McKinsey (2020–2021)</h1>
+<p>I joined CandidPartners in May 2020, embedded in an existing DevOps team at <strong>Repay.com</strong>, a large credit card processing company. On January 1, 2021, McKinsey acquired CandidPartners — my role continued without interruption.</p>
+<h2>Repay.com — Payment Processing Platform</h2>
+<p><strong>Stack:</strong> C# on .NET (not .NET Core) → Windows EC2 via Auto Scaling Groups, MSSQL on RDS (multi-region), CloudFront for static assets.</p>
+<h3>CloudFront Geo-Based Load Balancing</h3>
+<p>In July 2020, CloudFront released <a href="https://aws.amazon.com/about-aws/whats-new/2020/07/cloudfront-geolocation-headers/">geolocation headers</a> — GPS coordinates injected into each request. I modified the existing Edge Lambdas to use the client's longitude to deterministically route requests to either <code>us-east-1</code> or <code>us-west-2</code>:</p>
+<pre class="language-javascript"><code class="language-javascript">region <span class="token operator">=</span> <span class="token string">'us-east-1'</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>longitude <span class="token operator">&lt;</span> us_meridian<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    region <span class="token operator">=</span> <span class="token string">'us-west-2'</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">return</span> region</code></pre>
+<p>The threshold was stored in an SSM Parameter (<code>US-Meridian</code>) for easy tuning. The result: more deterministic load distribution and reduced pressure on the inter-region replication layer during lag events.</p>
+<h3>Batch CC Transaction Encryption via Lambda</h3>
+<p>Built a highly parallelized Lambda function to encrypt recently-cleared credit card transactions as a background task. Rather than one-record-at-a-time (the typical Lambda tutorial model), I used the full 15-minute execution window — encrypting thousands of transactions per invocation, monitoring elapsed time, and committing/closing cleanly at the 14.5-minute mark. Batch processing inside Lambda, essentially.</p>
+<h2>Federal Reserve Bank — ELMA</h2>
+<p>During the CandidPartners engagement, I also served the Federal Reserve Bank, where we built <strong>ELMA</strong> (Enterprise Logging Metrics and Analysis) — a serverless log ingestion product to normalize ~20 different log formats:</p>
+<ul>
+<li>Preprocessing Lambdas ingested and normalized raw logs</li>
+<li>Amazon Kinesis Stream + Kinesis Firehose wrote data to an AWS Glue database (S3-backed)</li>
+<li>AWS QuickSight enabled all users to query all log types as a unified SQL table</li>
+</ul>
+<p><a href="/work/">← Back to Work</a></p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

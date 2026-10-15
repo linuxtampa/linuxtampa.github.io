@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>When Gemini&#39;s Answer Column Is Narrower Than Its Own Table | LinuxTampa, LLC</title>
+  <meta name="description" content="Google Gemini&#39;s web UI answered with a table just wider than its reply column. It scrolled, but I wanted one screenshot of the whole thing. I couldn&#39;t find the culprit in DevTools, so I asked Gemini to fix itself. Here&#39;s the CSS that worked, and why it&#39;s a sledgehammer.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <article class="blog-post">
+  <header class="post-header">
+    <h1>When Gemini&#39;s Answer Column Is Narrower Than Its Own Table</h1>
+    <div class="post-meta">
+      <time datetime="2026-09-23">September 23, 2026</time>
+      
+      <span class="post-tags">
+        
+          
+        
+          
+          <a href="/tags/web/" class="tag">web</a>
+          
+        
+          
+          <a href="/tags/css/" class="tag">css</a>
+          
+        
+          
+          <a href="/tags/ai/" class="tag">ai</a>
+          
+        
+          
+          <a href="/tags/gemini/" class="tag">gemini</a>
+          
+        
+          
+          <a href="/tags/firefox/" class="tag">firefox</a>
+          
+        
+      </span>
+      
+    </div>
+    
+    <p class="post-description">Google Gemini&#39;s web UI answered with a table just wider than its reply column. It scrolled, but I wanted one screenshot of the whole thing. I couldn&#39;t find the culprit in DevTools, so I asked Gemini to fix itself. Here&#39;s the CSS that worked, and why it&#39;s a sledgehammer.</p>
+    
+  </header>
+
+  <div class="post-content">
+    <h2>The Setup</h2>
+<p>I was asking Google Gemini a handful of questions in the web UI. The topic doesn't matter here. One of the answers came back as a table, which is exactly the right format for the content: several rows, several columns, each cell a short phrase.</p>
+<p>The table was slightly too wide for the reply column. Nothing was broken, exactly: a horizontal scrollbar appeared at the bottom of the table, and scrolling right revealed the hidden columns. But I wanted a <strong>screenshot of the entire table</strong>, and you can't screenshot something you have to scroll to see. My window was wide, with plenty of unused space on both sides of the reply. Gemini just wouldn't let the table use it.</p>
+<p><img src="/images/blog/gemini-table-narrow-column.png" alt="Gemini's web UI with a four-column comparison table highlighted in orange. The table is scrolled sideways inside a narrow reply column: the first column is cut off at the left edge and text fades out at the right edge."></p>
+<p><em>The table, highlighted, inside Gemini's default reply column. It's scrolled sideways: the first column (&quot;Target Type&quot;) is cut off on the left, and the text fades out on the right. You never see all four columns at once.</em></p>
+<hr>
+<h2>What's Going On</h2>
+<p>Chat UIs put the conversation in a centered column with a <code>max-width</code>, usually somewhere between 700 and 800px. It's a sound default for prose, since long lines of text are hard to read. It's also why a chat that renders paragraphs beautifully can struggle the moment the model emits something inherently wide: a table, a long code line, a URL.</p>
+<p>A table is different from a paragraph. Text wraps to fit its container. A table's columns have a minimum content width, so once there are enough columns the table is wider than its container, and the browser has to decide what to do with the overflow. Roughly, there are three outcomes:</p>
+<table>
+<thead>
+<tr>
+<th>Container's <code>overflow</code></th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>visible</code> (default)</td>
+<td>The table spills out past the column. Ugly, but everything is readable</td>
+</tr>
+<tr>
+<td><code>auto</code> / <code>scroll</code></td>
+<td>A horizontal scrollbar appears; you can scroll to the hidden columns</td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>The overflow is clipped. The columns are still in the DOM, but you can't reach them</td>
+</tr>
+</tbody>
+</table>
+<p>Gemini was in the middle row: the scrollbar tells me the table sits inside a container that scrolls sideways. That's a perfectly reasonable design. It just isn't what I needed at that moment.</p>
+<p>There's one more detail, and it's the one that aggravated me most: <strong>the fade</strong>. Look at the left and right edges of the table in the first screenshot. The text doesn't stop at the edge of the column; it fades out, so the last few characters of every cell on either side are washed out and hard to read. I assume it's meant as a hint that there's more content off-screen, and as a hint it's fine. But it means the part of the table you <em>can</em> see isn't fully legible either, and a screenshot of a table that fades at both ends is useless for what I wanted. As far as I can tell, you can't switch it off.</p>
+<p>What I can't tell you is <em>which element</em> carries the narrow limit. I opened DevTools and went looking for the property, and I never found it. The page is a deep pile of nested elements with generated class names, and a <code>max-width</code> can sit on any ancestor, or come from a grid or flex layout rather than a declaration I could spot.</p>
+<hr>
+<h2>Workarounds</h2>
+<p>Roughly in order of effort:</p>
+<ol>
+<li><strong>Zoom out.</strong> <code>Ctrl</code> + <code>-</code> shrinks everything. It only helps if the column's width isn't fixed in CSS pixels, because a <code>max-width</code> in pixels scales down along with the table. Cheap to try.</li>
+<li><strong>Fix it in DevTools.</strong> Right-click the table, choose <em>Inspect</em>, walk up the tree until you find the ancestor with the <code>max-width</code>, and untick it. Instant, but it disappears on reload, and it only works if you can find the right ancestor. I couldn't.</li>
+<li><strong>Export the table.</strong> Gemini has an export button on its tables. That's the right tool if you want the <em>data</em>, but it wasn't what I needed: I wanted a picture of the table as it was rendered in the conversation.</li>
+<li><strong>Make the fix permanent with a user style.</strong> A browser extension that injects your own CSS into a site. This is what I ended up doing.</li>
+</ol>
+<hr>
+<h2>What Actually Worked: Asking Gemini to Fix Gemini</h2>
+<p>Having failed in DevTools, I did the slightly absurd thing and asked Gemini how to permanently widen its own response column. It suggested installing a Firefox extension called <a href="https://addons.mozilla.org/en-US/firefox/addon/qb-custom-css/">Custom CSS</a> and applying these rules to the Gemini site:</p>
+<pre class="language-css"><code class="language-css"><span class="token selector">main,
+[role="main"],
+article,
+div[class*="content"],
+div[class*="markdown"]</span> <span class="token punctuation">{</span>
+  <span class="token property">max-width</span><span class="token punctuation">:</span> 92vw <span class="token important">!important</span><span class="token punctuation">;</span>
+  <span class="token property">width</span><span class="token punctuation">:</span> 100% <span class="token important">!important</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">/* Neutralize narrow grid or flex layout restrictions */</span>
+<span class="token selector">main *,
+[role="main"] *</span> <span class="token punctuation">{</span>
+  <span class="token property">max-width</span><span class="token punctuation">:</span> 100% <span class="token important">!important</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>It worked on the first try: the reply column now takes up most of the window, the table fits, and I got my screenshot.</p>
+<p><img src="/images/blog/gemini-table-wide-column.png" alt="The same Gemini table, highlighted in orange, now shown in full with all four columns (Target Type, Pros, Cons, Best Used For) visible at once across a widened reply column."></p>
+<p><em>The same table after applying the CSS: all four columns visible at once.</em></p>
+<p>It was a helpful enough answer that I gave it a thumbs up. The browser doesn't matter to the CSS itself, since Chrome and others would render the page the same way, but the extension I used is a Firefox add-on, so on another browser you'd need its equivalent.</p>
+<h3>Why it works, and why I'm a little uneasy about it</h3>
+<p>This is a <strong>shotgun</strong>, not a scalpel. It's what you write when you <em>can't</em> find the one rule responsible:</p>
+<ul>
+<li>The first block covers every plausible container. <code>main</code>, <code>[role=&quot;main&quot;]</code> and <code>article</code> are structural elements. <code>div[class*=&quot;content&quot;]</code> and <code>div[class*=&quot;markdown&quot;]</code> are attribute selectors that match any <code>div</code> whose class name merely <em>contains</em> those words. Gemini's real class names are generated and opaque, so this is guessing that some of them contain &quot;content&quot; or &quot;markdown&quot;. It happens to hit.</li>
+<li>The second block, <code>main * { max-width: 100% !important }</code>, removes the cap from every descendant of <code>main</code>. That's the part that defeats layout constraints I couldn't locate: whichever nested element had the narrow limit, it now can't exceed its parent, and the parent is now 92% of the viewport.</li>
+<li><code>!important</code> on everything is how it wins against the site's own rules without knowing their specificity. It's also why it's brittle to debug.</li>
+</ul>
+<p>The tradeoffs are real. It will break if Google restructures the page or renames the classes those substring matches depend on. The universal <code>main *</code> rule may affect things that were <em>supposed</em> to have their own widths, such as buttons, popovers and the input box, so it's worth a look at the whole page and not just the table. A table wider than 92% of the window would still get its scrollbar. And reading prose across a 92vw column is harder on the eyes, which is the reason the original column was narrow in the first place.</p>
+<p>I'll take that trade, because the alternative was stitching several screenshots together. But if you go this route, a better long-term version is the one I couldn't write: find the real element and target it directly.</p>
+<hr>
+<h2>Would This Affect Code Blocks and CSV Too?</h2>
+<p>I only saw this with a rendered Markdown table, and that's all I tested. My guess is that any wide content inside the same column would run into the same limit, including a code block or CSV output, but I haven't verified that.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <a href="/blog/">&larr; Back to Blog</a>
+  </footer>
+</article>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

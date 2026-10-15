@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building a Dark Mode Toggle That Plays Nice With Dark Reader | LinuxTampa, LLC</title>
+  <meta name="description" content="How to detect the Dark Reader browser extension and gracefully step aside — with a MutationObserver, a one-liner CSS trick, and a lesson I learned the hard way about why this actually matters.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <article class="blog-post">
+  <header class="post-header">
+    <h1>Building a Dark Mode Toggle That Plays Nice With Dark Reader</h1>
+    <div class="post-meta">
+      <time datetime="2026-08-12">August 12, 2026</time>
+      
+      <span class="post-tags">
+        
+          
+        
+          
+          <a href="/tags/web/" class="tag">web</a>
+          
+        
+          
+          <a href="/tags/css/" class="tag">css</a>
+          
+        
+          
+          <a href="/tags/javascript/" class="tag">javascript</a>
+          
+        
+          
+          <a href="/tags/empathy/" class="tag">empathy</a>
+          
+        
+      </span>
+      
+    </div>
+    
+    <p class="post-description">How to detect the Dark Reader browser extension and gracefully step aside — with a MutationObserver, a one-liner CSS trick, and a lesson I learned the hard way about why this actually matters.</p>
+    
+  </header>
+
+  <div class="post-content">
+    <h2>Why I Care About This</h2>
+<p>In 2022, I had life-changing eye surgery — lens replacement. Before the surgery, I could not read bright white screens without significant pain and discomfort. Dark Reader became a non-negotiable part of my browser setup. Every site I visited got inverted whether the developers intended it or not.  But sometimes a web offers a dark mode toggle but it actually conflict with DarkReader's efforts.</p>
+<p>I'm not alone. Millions of people depend on Dark Reader and similar extensions for accessibility reasons — photosensitivity, migraines, recovering from eye surgery, or simply preferring low-luminance environments. Many of them have no control over their viewing conditions. Think about screen sharing: when someone else is presenting, you're stuck with whatever theme their machine is running.</p>
+<p>With the new artificial lens in each eye now, I can handle bright screens again — though I still prefer dark.  But the issue is still important to me, because #empathy is an important value.</p>
+<p>But building this site gave me a fresh appreciation for the problem from the other side: what happens when <em>your</em> site's dark mode toggle and Dark Reader are both active at the same time?</p>
+<p>The short answer: they fight, and it looks terrible.</p>
+<hr>
+<h2>The Problem</h2>
+<p>When you build a dark mode toggle into your site, you're typically doing something like this:</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token comment">// Set dark mode</span>
+document<span class="token punctuation">.</span>documentElement<span class="token punctuation">.</span><span class="token function">setAttribute</span><span class="token punctuation">(</span><span class="token string">'data-theme'</span><span class="token punctuation">,</span> <span class="token string">'dark'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Set light mode</span>
+document<span class="token punctuation">.</span>documentElement<span class="token punctuation">.</span><span class="token function">removeAttribute</span><span class="token punctuation">(</span><span class="token string">'data-theme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>And your CSS looks like:</p>
+<pre class="language-css"><code class="language-css"><span class="token selector">:root</span> <span class="token punctuation">{</span>
+  <span class="token property">--bg-main</span><span class="token punctuation">:</span> #fdf8f2<span class="token punctuation">;</span>
+  <span class="token property">--text-primary</span><span class="token punctuation">:</span> #2c1a0e<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token selector">[data-theme="dark"]</span> <span class="token punctuation">{</span>
+  <span class="token property">--bg-main</span><span class="token punctuation">:</span> #0f150f<span class="token punctuation">;</span>
+  <span class="token property">--text-primary</span><span class="token punctuation">:</span> #00ff9f<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>This works beautifully on its own. But Dark Reader works by injecting its own stylesheet into the page — it analyzes your colors, inverts them, and applies its own <code>data-darkreader-scheme</code> attribute to <code>&lt;html&gt;</code>. If your toggle is also active, both stylesheets are fighting over the same elements. The result is an ugly, inconsistent mess: some things are double-inverted back to light, others are a muddy combination of both themes.</p>
+<p>The polite solution is to detect that Dark Reader is present and step aside.</p>
+<hr>
+<h2>Detecting Dark Reader</h2>
+<p>Dark Reader signals its presence by adding a <code>data-darkreader-scheme</code> attribute to the <code>&lt;html&gt;</code> element. You can check for it directly:</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token function-variable function">isDarkReaderActive</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span>
+  document<span class="token punctuation">.</span>documentElement<span class="token punctuation">.</span><span class="token function">hasAttribute</span><span class="token punctuation">(</span><span class="token string">'data-darkreader-scheme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>The catch: Dark Reader injects asynchronously after the page loads. If you check at <code>DOMContentLoaded</code>, you'll often check before DR has done anything. A simple <code>setTimeout</code> workaround is fragile — network speed, extension load order, and browser quirks all affect timing.</p>
+<p>The right event to catch these changes is called a <code>MutationObserver</code>. It watches the DOM for changes and fires a callback the instant Dark Reader adds or removes its attribute — no polling, no race conditions, NO EXCUSES!</p>
+<hr>
+<h2>The Solution</h2>
+<p>Here's the complete dark mode toggle script with Dark Reader awareness built in:</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token punctuation">(</span><span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> themeToggle <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'theme-toggle'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> themeToggleText <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'theme-toggle-text'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> html <span class="token operator">=</span> document<span class="token punctuation">.</span>documentElement<span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> <span class="token function-variable function">setTheme</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token parameter">theme</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>theme <span class="token operator">===</span> <span class="token string">'dark'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      html<span class="token punctuation">.</span><span class="token function">setAttribute</span><span class="token punctuation">(</span><span class="token string">'data-theme'</span><span class="token punctuation">,</span> <span class="token string">'dark'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      themeToggleText<span class="token punctuation">.</span>textContent <span class="token operator">=</span> <span class="token string">'Light'</span><span class="token punctuation">;</span>
+      localStorage<span class="token punctuation">.</span><span class="token function">setItem</span><span class="token punctuation">(</span><span class="token string">'theme'</span><span class="token punctuation">,</span> <span class="token string">'dark'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      html<span class="token punctuation">.</span><span class="token function">removeAttribute</span><span class="token punctuation">(</span><span class="token string">'data-theme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      themeToggleText<span class="token punctuation">.</span>textContent <span class="token operator">=</span> <span class="token string">'Dark'</span><span class="token punctuation">;</span>
+      localStorage<span class="token punctuation">.</span><span class="token function">setItem</span><span class="token punctuation">(</span><span class="token string">'theme'</span><span class="token punctuation">,</span> <span class="token string">'light'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Restore saved preference on load</span>
+  <span class="token function">setTheme</span><span class="token punctuation">(</span>localStorage<span class="token punctuation">.</span><span class="token function">getItem</span><span class="token punctuation">(</span><span class="token string">'theme'</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token string">'light'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  themeToggle<span class="token punctuation">.</span><span class="token function">addEventListener</span><span class="token punctuation">(</span><span class="token string">'click'</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> current <span class="token operator">=</span> html<span class="token punctuation">.</span><span class="token function">getAttribute</span><span class="token punctuation">(</span><span class="token string">'data-theme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">setTheme</span><span class="token punctuation">(</span>current <span class="token operator">===</span> <span class="token string">'dark'</span> <span class="token operator">?</span> <span class="token string">'light'</span> <span class="token operator">:</span> <span class="token string">'dark'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Hide our toggle if Dark Reader is active — it's already doing the job.</span>
+  <span class="token comment">// Use visibility:hidden instead of display:none to preserve layout spacing.</span>
+  <span class="token keyword">const</span> <span class="token function-variable function">checkDarkReader</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> drActive <span class="token operator">=</span> html<span class="token punctuation">.</span><span class="token function">hasAttribute</span><span class="token punctuation">(</span><span class="token string">'data-darkreader-scheme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    themeToggle<span class="token punctuation">.</span>style<span class="token punctuation">.</span>visibility <span class="token operator">=</span> drActive <span class="token operator">?</span> <span class="token string">'hidden'</span> <span class="token operator">:</span> <span class="token string">''</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+  <span class="token function">checkDarkReader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">new</span> <span class="token class-name">MutationObserver</span><span class="token punctuation">(</span>checkDarkReader<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">observe</span><span class="token punctuation">(</span>html<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token literal-property property">attributes</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+    <span class="token literal-property property">attributeFilter</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">'data-darkreader-scheme'</span><span class="token punctuation">]</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>The key decisions:</p>
+<p><strong><code>attributeFilter: ['data-darkreader-scheme']</code></strong> — We're only watching for the one attribute we care about. Without this filter, the observer would fire on <em>any</em> attribute change to <code>&lt;html&gt;</code>, including our own <code>data-theme</code> toggles, causing unnecessary callbacks.</p>
+<p><strong><code>visibility: hidden</code> instead of <code>display: none</code></strong> — This is a subtle but important distinction. <code>display: none</code> removes the element from the layout flow entirely. If your toggle button is a flex child in your nav bar, hiding it with <code>display: none</code> collapses that slot and causes the remaining nav items to shift. <code>visibility: hidden</code> makes the element invisible while preserving its space in the layout — the nav stays perfectly centered regardless of whether the button is visible.</p>
+<pre class="language-css"><code class="language-css"><span class="token comment">/* What we want — button disappears, space remains */</span>
+themeToggle.style.visibility = <span class="token string">'hidden'</span><span class="token punctuation">;</span>  <span class="token comment">/* ✓ */</span>
+
+<span class="token comment">/* What we don't want — button disappears, nav shifts */</span>
+themeToggle.style.display = <span class="token string">'none'</span><span class="token punctuation">;</span>       <span class="token comment">/* ✗ */</span></code></pre>
+<hr>
+<h2>The HTML</h2>
+<p>Your toggle button just needs an ID and a text span to update:</p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>button</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>theme-toggle<span class="token punctuation">"</span></span> <span class="token attr-name">aria-label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>Toggle dark mode<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>span</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>theme-toggle-text<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>Dark<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>span</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>button</span><span class="token punctuation">></span></span></code></pre>
+<p>When Dark Reader is active, the button is invisible but still in the DOM, still taking up space, and the <code>MutationObserver</code> is still watching. The moment a user disables Dark Reader, the observer fires, the button reappears, and your toggle is fully functional again.</p>
+<hr>
+<h2>A Note on Accessibility</h2>
+<p>If you're building for an audience that includes people with photosensitivity or visual impairments, a well-implemented dark mode isn't just a nice-to-have — it's a courtesy. Dark Reader exists because browsers and operating systems were late to the party on system-level dark mode, and many sites still don't respect <code>prefers-color-scheme</code> at all.</p>
+<p>The approach above respects the user's choice: if they've installed Dark Reader, they've made a deliberate decision about how they want to see the web. Your toggle doesn't fight them — it just quietly gets out of the way.</p>
+<p>If you want to go further, you can also respect the system preference on first load by checking <code>prefers-color-scheme</code> before falling back to your saved <code>localStorage</code> value:</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token function-variable function">getInitialTheme</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> saved <span class="token operator">=</span> localStorage<span class="token punctuation">.</span><span class="token function">getItem</span><span class="token punctuation">(</span><span class="token string">'theme'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>saved<span class="token punctuation">)</span> <span class="token keyword">return</span> saved<span class="token punctuation">;</span>
+  <span class="token keyword">return</span> window<span class="token punctuation">.</span><span class="token function">matchMedia</span><span class="token punctuation">(</span><span class="token string">'(prefers-color-scheme: dark)'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>matches
+    <span class="token operator">?</span> <span class="token string">'dark'</span>
+    <span class="token operator">:</span> <span class="token string">'light'</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span></code></pre>
+<p>Small things. Big difference for the people who need them.</p>
+<hr>
+<h2>Update: Now an npm Package</h2>
+<p>I liked this pattern enough that I pulled it out of this site and turned it into a proper package: <a href="https://github.com/timbaileyjones/dark-reader-aware-theme-toggle-button"><code>dark-reader-aware-theme-toggle-button</code></a> (<a href="https://www.npmjs.com/package/dark-reader-aware-theme-toggle-button">npm</a>).</p>
+<p>It's the same idea as above, hardened a bit further — it checks all four DOM signals Dark Reader can leave behind (dynamic <em>and</em> filter/static modes, not just <code>data-darkreader-scheme</code>), ships TypeScript types, and has zero runtime dependencies. Both this site and <a href="https://bailey-jones.com">bailey-jones.com</a> run on it now.</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">npm</span> <span class="token function">install</span> dark-reader-aware-theme-toggle-button</code></pre>
+<pre class="language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> mountThemeToggleButton <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'dark-reader-aware-theme-toggle-button'</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token string">'dark-reader-aware-theme-toggle-button/styles/toggle-button.css'</span><span class="token punctuation">;</span>
+
+<span class="token function">mountThemeToggleButton</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  <span class="token literal-property property">button</span><span class="token operator">:</span> <span class="token string">'#theme-toggle'</span><span class="token punctuation">,</span>
+  <span class="token literal-property property">label</span><span class="token operator">:</span> <span class="token string">'#theme-toggle-text'</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Everything else on this page — the reasoning, the <code>MutationObserver</code>, the <code>visibility: hidden</code> trick — still holds. The package just saves you from copy-pasting it into every project.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <a href="/blog/">&larr; Back to Blog</a>
+  </footer>
+</article>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

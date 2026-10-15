@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>LinuxTampa, LLC Blog</title>
+  <subtitle>Your Guide to OpenSource Software for Business</subtitle>
+  <link href="https://linuxtampa.com/feed.xml" rel="self"/>
+  <link href="https://linuxtampa.com/"/>
+  <updated>2026-10-10T00:00:00Z</updated>
+  <id>https://linuxtampa.com/</id>
+  <author>
+    <name>Tim Bailey Jones</name>
+    <email>hello@linuxtampa.com</email>
+  </author>
+  <entry>
+    <title>Let Claude Keep the Wiki: Weekly Documentation from Merge Requests, Commits, and Issues</title>
+    <link href="https://linuxtampa.com/blog/2026-10-10-claude-maintained-gitlab-wikis/"/>
+    <updated>2026-10-10T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-10-10-claude-maintained-gitlab-wikis/</id>
+    <content type="html">&lt;h2&gt;The Problem Nobody Wants to Own&lt;/h2&gt;
+&lt;p&gt;Every team I&#39;ve worked with has the same wiki: lovingly written in month one, quietly wrong by month six. Nobody decides to let it rot. The code just changes faster than anyone has time to write about it.&lt;/p&gt;
+&lt;p&gt;At one of my clients, I decided to stop relying on willpower. About once a week I run a script that reads what actually happened in each repo (commits, merged merge requests, issues opened and closed) and asks Claude to update the wiki to match. So far it works better than I expected.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The Shadow Wiki Trick&lt;/h2&gt;
+&lt;p&gt;GitLab gives every project a wiki, and that wiki is itself a git repository. If your project lives at &lt;code&gt;gitlab.example.com/group/infrastructure-terraform&lt;/code&gt;, the wiki is cloned from &lt;code&gt;gitlab.example.com/group/infrastructure-terraform.wiki.git&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;That detail does most of the work for us:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The wiki is just markdown files in a git repo, so there&#39;s no special API to learn.&lt;/li&gt;
+&lt;li&gt;Pushing to it is a normal &lt;code&gt;git push&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Git history gives us an audit trail of every documentation change for free.&lt;/li&gt;
+&lt;li&gt;Git commit trailers give us somewhere to keep state (more on that below).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr /&gt;
+&lt;h2&gt;What Comes Out&lt;/h2&gt;
+&lt;p&gt;The output is what sold me. Claude doesn&#39;t just paraphrase commit messages. It writes pages that look like someone cared:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Markdown tables&lt;/strong&gt; for inventories: environments, modules, variables, services.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a href=&quot;https://mermaid.js.org/&quot;&gt;Mermaid&lt;/a&gt; diagrams&lt;/strong&gt; for architecture and flow, which GitLab renders natively in wikis.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;A change history&lt;/strong&gt; that records &lt;em&gt;when&lt;/em&gt; something changed, &lt;em&gt;who&lt;/em&gt; changed it, and a link to the &lt;strong&gt;MR&lt;/strong&gt; that did it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That last one is the part I value most. The &amp;quot;why did this change?&amp;quot; question now has a clickable answer sitting next to the documentation itself.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;How the Script Works&lt;/h2&gt;
+&lt;p&gt;The design principle is that &lt;strong&gt;the script does everything deterministic, and Claude does only the writing.&lt;/strong&gt; Claude never touches the network, never runs git, and never sees a source repo checkout.&lt;/p&gt;
+&lt;h3&gt;1. State lives in the wiki itself&lt;/h3&gt;
+&lt;p&gt;I didn&#39;t want a database, a state file, or a cron-host dotfile to get out of sync. Instead, each sync commit to the wiki carries git trailers:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;wiki-sync: 23 commits, 4 merged MRs, 2 issues since 2026-10-08T14:02:11Z
+
+Synced-Branch: main 3f9c1e0a...
+Synced-Branch: release 9b77d412...
+Synced-Through: 2026-10-15T13:58:40Z
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Synced-Branch&lt;/code&gt; records the last commit digested on each tracked branch. &lt;code&gt;Synced-Through&lt;/code&gt; is a timestamp cursor for issues and MRs. The next run finds the newest commit carrying these trailers with &lt;code&gt;git log --format=&#39;%(trailers:...)&#39;&lt;/code&gt; and picks up from there.&lt;/p&gt;
+&lt;p&gt;The important property: &lt;strong&gt;the cursor only advances in the same push as the pages it describes.&lt;/strong&gt; If anything fails halfway, nothing moves, and the next run re-covers the same ground.&lt;/p&gt;
+&lt;h3&gt;2. Build a digest&lt;/h3&gt;
+&lt;p&gt;For each repo, the script assembles one markdown digest:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Commits&lt;/strong&gt; since the cursor on each tracked branch, oldest first, each with its message, a &lt;code&gt;--stat&lt;/code&gt;, and a capped diff excerpt (150 lines per commit, with lockfiles, &lt;code&gt;vendor/&lt;/code&gt;, minified assets and source maps excluded). There&#39;s a hard cap on commits per run and a total byte budget for diffs so a monster week doesn&#39;t blow up the context window.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Merged MRs&lt;/strong&gt; from the GitLab API, with author, source and target branch, and a trimmed description.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Issues&lt;/strong&gt; created or closed in the window, with labels and state.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Two details earned their keep:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Cherry-pick de-duplication.&lt;/strong&gt; If the same fix lands on &lt;code&gt;main&lt;/code&gt; and a release branch, it would otherwise be described twice. The script computes &lt;code&gt;git patch-id --stable&lt;/code&gt; for each commit and drops repeats.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Cursor fallback.&lt;/strong&gt; If someone force-pushes and the stored SHA is no longer an ancestor of the branch tip, the script falls back to a time-based &lt;code&gt;--since&lt;/code&gt; instead of failing.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. Run Claude headless and locked down&lt;/h3&gt;
+&lt;p&gt;The digest is appended to a prompt template and piped into &lt;code&gt;claude -p&lt;/code&gt;, run from inside the wiki checkout:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;claude &lt;span class=&quot;token parameter variable&quot;&gt;-p&lt;/span&gt; --permission-mode dontAsk &lt;span class=&quot;token punctuation&quot;&gt;&#92;&lt;/span&gt;
+  &lt;span class=&quot;token parameter variable&quot;&gt;--allowedTools&lt;/span&gt; Read Edit Write Glob Grep&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That&#39;s the entire tool allowlist: read, edit, write, and search, with no Bash and no network. Claude can only touch files in the wiki clone.&lt;/p&gt;
+&lt;p&gt;I use a dedicated &lt;code&gt;CLAUDE_CONFIG_DIR&lt;/code&gt; so the client work runs under its own login and settings, separate from my personal setup.&lt;/p&gt;
+&lt;h3&gt;4. Don&#39;t trust, sanitize&lt;/h3&gt;
+&lt;p&gt;After Claude finishes, a &lt;code&gt;sanitize_wiki&lt;/code&gt; step reverts anything the script doesn&#39;t accept: any changed file that isn&#39;t &lt;code&gt;.md&lt;/code&gt;, and any deleted page. Belt and suspenders on top of the tool allowlist.&lt;/p&gt;
+&lt;p&gt;If Claude exits non-zero, the script resets the wiki checkout to clean and reports a failure. Half-written documentation never gets committed.&lt;/p&gt;
+&lt;h3&gt;5. Commit and push&lt;/h3&gt;
+&lt;p&gt;The commit message is a one-line summary of counts, then Claude&#39;s own summary of what it changed (trimmed), then the trailers, plus a &lt;code&gt;Co-Authored-By: Claude&lt;/code&gt; line so it&#39;s honest about who wrote what. The script pushes, and if the push is rejected it rebases once and retries.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Small Safety Features That Matter&lt;/h2&gt;
+&lt;p&gt;None of these are clever, but together they make a weekly manual run something I trust:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Feature&lt;/th&gt;
+&lt;th&gt;Why&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;flock&lt;/code&gt; on a lock file&lt;/td&gt;
+&lt;td&gt;One run at a time per machine&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;.updating&lt;/code&gt; marker in the wiki&lt;/td&gt;
+&lt;td&gt;A human or another session editing that wiki blocks the run; stale after 2 hours&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Refuses to run with a dirty wiki checkout&lt;/td&gt;
+&lt;td&gt;Never mixes my hand edits with generated ones&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--ff-only&lt;/code&gt; merge before starting&lt;/td&gt;
+&lt;td&gt;Fails loudly if the wiki diverged from origin&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Once-per-day rule (&lt;code&gt;--force&lt;/code&gt; to override)&lt;/td&gt;
+&lt;td&gt;Prevents accidental double runs&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--dry-run&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Builds every digest and prints sizes; no Claude, no commit&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;--keep&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Preserves digests, prompts and Claude&#39;s raw output for debugging&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Per-repo exit status summary&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;updated&lt;/code&gt;, &lt;code&gt;skipped&lt;/code&gt;, &lt;code&gt;nothing new&lt;/code&gt;, or &lt;code&gt;FAILED&lt;/code&gt; at a glance&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The summary at the end looks like:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;api-gateway                      updated
+infrastructure-terraform         updated
+legacy-batch-jobs                nothing new
+shared-modules                   skipped
+&lt;/code&gt;&lt;/pre&gt;
+&lt;hr /&gt;
+&lt;h2&gt;What I&#39;d Tell You Before You Try This&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Pass in facts, not hopes.&lt;/strong&gt; Claude is good at turning a diff and an MR description into prose and tables. It&#39;s much worse at guessing what happened. Every claim in the wiki traces back to something in the digest, which is why the digest includes links.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Cap everything.&lt;/strong&gt; Commits, diff lines, description lengths, total bytes. Context is finite, and bounded input makes the cost and runtime predictable.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Keep the prompt in a file under version control.&lt;/strong&gt; Mine is a template with placeholders for the repo, date range and branches. Tuning documentation style is just editing markdown.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Seed the wiki first.&lt;/strong&gt; The script refuses to run without a baseline sync commit. The first generation is a different, larger job; weekly updates are incremental.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Review it, at least at first.&lt;/strong&gt; Because the wiki is a git repo, &lt;code&gt;git show&lt;/code&gt; on the sync commit is the review. I skim the diff after each run.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Why It Works&lt;/h2&gt;
+&lt;p&gt;It isn&#39;t magic. It works because the pieces are boring: git as the database, trailers as the cursor, the GitLab API for the facts, and a model confined to editing markdown files. The model does the one thing it&#39;s good at, which is turning a pile of change records into readable documentation, and everything that could go wrong is handled by plain shell around it.&lt;/p&gt;
+&lt;p&gt;The wiki goes from &amp;quot;stale by default&amp;quot; to &amp;quot;current as of last Tuesday,&amp;quot; and for about thirty minutes of babysitting a week, I&#39;ll take that trade.&lt;/p&gt;
+</content>
+    <summary>A ~350-line bash script that feeds a week of commits, merged MRs, and issues to headless Claude and pushes the result to every GitLab project wiki, with git trailers as the only state.</summary>
+  </entry>
+  <entry>
+    <title>When Gemini&#39;s Answer Column Is Narrower Than Its Own Table</title>
+    <link href="https://linuxtampa.com/blog/2026-09-23-gemini-web-widen-reply-column/"/>
+    <updated>2026-09-23T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-09-23-gemini-web-widen-reply-column/</id>
+    <content type="html">&lt;h2&gt;The Setup&lt;/h2&gt;
+&lt;p&gt;I was asking Google Gemini a handful of questions in the web UI. The topic doesn&#39;t matter here. One of the answers came back as a table, which is exactly the right format for the content: several rows, several columns, each cell a short phrase.&lt;/p&gt;
+&lt;p&gt;The table was slightly too wide for the reply column. Nothing was broken, exactly: a horizontal scrollbar appeared at the bottom of the table, and scrolling right revealed the hidden columns. But I wanted a &lt;strong&gt;screenshot of the entire table&lt;/strong&gt;, and you can&#39;t screenshot something you have to scroll to see. My window was wide, with plenty of unused space on both sides of the reply. Gemini just wouldn&#39;t let the table use it.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://linuxtampa.com/images/blog/gemini-table-narrow-column.png&quot; alt=&quot;Gemini&#39;s web UI with a four-column comparison table highlighted in orange. The table is scrolled sideways inside a narrow reply column: the first column is cut off at the left edge and text fades out at the right edge.&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;The table, highlighted, inside Gemini&#39;s default reply column. It&#39;s scrolled sideways: the first column (&amp;quot;Target Type&amp;quot;) is cut off on the left, and the text fades out on the right. You never see all four columns at once.&lt;/em&gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;What&#39;s Going On&lt;/h2&gt;
+&lt;p&gt;Chat UIs put the conversation in a centered column with a &lt;code&gt;max-width&lt;/code&gt;, usually somewhere between 700 and 800px. It&#39;s a sound default for prose, since long lines of text are hard to read. It&#39;s also why a chat that renders paragraphs beautifully can struggle the moment the model emits something inherently wide: a table, a long code line, a URL.&lt;/p&gt;
+&lt;p&gt;A table is different from a paragraph. Text wraps to fit its container. A table&#39;s columns have a minimum content width, so once there are enough columns the table is wider than its container, and the browser has to decide what to do with the overflow. Roughly, there are three outcomes:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Container&#39;s &lt;code&gt;overflow&lt;/code&gt;&lt;/th&gt;
+&lt;th&gt;What you see&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;visible&lt;/code&gt; (default)&lt;/td&gt;
+&lt;td&gt;The table spills out past the column. Ugly, but everything is readable&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;auto&lt;/code&gt; / &lt;code&gt;scroll&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;A horizontal scrollbar appears; you can scroll to the hidden columns&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;hidden&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The overflow is clipped. The columns are still in the DOM, but you can&#39;t reach them&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Gemini was in the middle row: the scrollbar tells me the table sits inside a container that scrolls sideways. That&#39;s a perfectly reasonable design. It just isn&#39;t what I needed at that moment.&lt;/p&gt;
+&lt;p&gt;There&#39;s one more detail, and it&#39;s the one that aggravated me most: &lt;strong&gt;the fade&lt;/strong&gt;. Look at the left and right edges of the table in the first screenshot. The text doesn&#39;t stop at the edge of the column; it fades out, so the last few characters of every cell on either side are washed out and hard to read. I assume it&#39;s meant as a hint that there&#39;s more content off-screen, and as a hint it&#39;s fine. But it means the part of the table you &lt;em&gt;can&lt;/em&gt; see isn&#39;t fully legible either, and a screenshot of a table that fades at both ends is useless for what I wanted. As far as I can tell, you can&#39;t switch it off.&lt;/p&gt;
+&lt;p&gt;What I can&#39;t tell you is &lt;em&gt;which element&lt;/em&gt; carries the narrow limit. I opened DevTools and went looking for the property, and I never found it. The page is a deep pile of nested elements with generated class names, and a &lt;code&gt;max-width&lt;/code&gt; can sit on any ancestor, or come from a grid or flex layout rather than a declaration I could spot.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Workarounds&lt;/h2&gt;
+&lt;p&gt;Roughly in order of effort:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Zoom out.&lt;/strong&gt; &lt;code&gt;Ctrl&lt;/code&gt; + &lt;code&gt;-&lt;/code&gt; shrinks everything. It only helps if the column&#39;s width isn&#39;t fixed in CSS pixels, because a &lt;code&gt;max-width&lt;/code&gt; in pixels scales down along with the table. Cheap to try.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Fix it in DevTools.&lt;/strong&gt; Right-click the table, choose &lt;em&gt;Inspect&lt;/em&gt;, walk up the tree until you find the ancestor with the &lt;code&gt;max-width&lt;/code&gt;, and untick it. Instant, but it disappears on reload, and it only works if you can find the right ancestor. I couldn&#39;t.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Export the table.&lt;/strong&gt; Gemini has an export button on its tables. That&#39;s the right tool if you want the &lt;em&gt;data&lt;/em&gt;, but it wasn&#39;t what I needed: I wanted a picture of the table as it was rendered in the conversation.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Make the fix permanent with a user style.&lt;/strong&gt; A browser extension that injects your own CSS into a site. This is what I ended up doing.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr /&gt;
+&lt;h2&gt;What Actually Worked: Asking Gemini to Fix Gemini&lt;/h2&gt;
+&lt;p&gt;Having failed in DevTools, I did the slightly absurd thing and asked Gemini how to permanently widen its own response column. It suggested installing a Firefox extension called &lt;a href=&quot;https://addons.mozilla.org/en-US/firefox/addon/qb-custom-css/&quot;&gt;Custom CSS&lt;/a&gt; and applying these rules to the Gemini site:&lt;/p&gt;
+&lt;pre class=&quot;language-css&quot;&gt;&lt;code class=&quot;language-css&quot;&gt;&lt;span class=&quot;token selector&quot;&gt;main,
+[role=&quot;main&quot;],
+article,
+div[class*=&quot;content&quot;],
+div[class*=&quot;markdown&quot;]&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;max-width&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; 92vw &lt;span class=&quot;token important&quot;&gt;!important&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; 100% &lt;span class=&quot;token important&quot;&gt;!important&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;/* Neutralize narrow grid or flex layout restrictions */&lt;/span&gt;
+&lt;span class=&quot;token selector&quot;&gt;main *,
+[role=&quot;main&quot;] *&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;max-width&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; 100% &lt;span class=&quot;token important&quot;&gt;!important&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It worked on the first try: the reply column now takes up most of the window, the table fits, and I got my screenshot.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://linuxtampa.com/images/blog/gemini-table-wide-column.png&quot; alt=&quot;The same Gemini table, highlighted in orange, now shown in full with all four columns (Target Type, Pros, Cons, Best Used For) visible at once across a widened reply column.&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;The same table after applying the CSS: all four columns visible at once.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;It was a helpful enough answer that I gave it a thumbs up. The browser doesn&#39;t matter to the CSS itself, since Chrome and others would render the page the same way, but the extension I used is a Firefox add-on, so on another browser you&#39;d need its equivalent.&lt;/p&gt;
+&lt;h3&gt;Why it works, and why I&#39;m a little uneasy about it&lt;/h3&gt;
+&lt;p&gt;This is a &lt;strong&gt;shotgun&lt;/strong&gt;, not a scalpel. It&#39;s what you write when you &lt;em&gt;can&#39;t&lt;/em&gt; find the one rule responsible:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The first block covers every plausible container. &lt;code&gt;main&lt;/code&gt;, &lt;code&gt;[role=&amp;quot;main&amp;quot;]&lt;/code&gt; and &lt;code&gt;article&lt;/code&gt; are structural elements. &lt;code&gt;div[class*=&amp;quot;content&amp;quot;]&lt;/code&gt; and &lt;code&gt;div[class*=&amp;quot;markdown&amp;quot;]&lt;/code&gt; are attribute selectors that match any &lt;code&gt;div&lt;/code&gt; whose class name merely &lt;em&gt;contains&lt;/em&gt; those words. Gemini&#39;s real class names are generated and opaque, so this is guessing that some of them contain &amp;quot;content&amp;quot; or &amp;quot;markdown&amp;quot;. It happens to hit.&lt;/li&gt;
+&lt;li&gt;The second block, &lt;code&gt;main * { max-width: 100% !important }&lt;/code&gt;, removes the cap from every descendant of &lt;code&gt;main&lt;/code&gt;. That&#39;s the part that defeats layout constraints I couldn&#39;t locate: whichever nested element had the narrow limit, it now can&#39;t exceed its parent, and the parent is now 92% of the viewport.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;!important&lt;/code&gt; on everything is how it wins against the site&#39;s own rules without knowing their specificity. It&#39;s also why it&#39;s brittle to debug.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The tradeoffs are real. It will break if Google restructures the page or renames the classes those substring matches depend on. The universal &lt;code&gt;main *&lt;/code&gt; rule may affect things that were &lt;em&gt;supposed&lt;/em&gt; to have their own widths, such as buttons, popovers and the input box, so it&#39;s worth a look at the whole page and not just the table. A table wider than 92% of the window would still get its scrollbar. And reading prose across a 92vw column is harder on the eyes, which is the reason the original column was narrow in the first place.&lt;/p&gt;
+&lt;p&gt;I&#39;ll take that trade, because the alternative was stitching several screenshots together. But if you go this route, a better long-term version is the one I couldn&#39;t write: find the real element and target it directly.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Would This Affect Code Blocks and CSV Too?&lt;/h2&gt;
+&lt;p&gt;I only saw this with a rendered Markdown table, and that&#39;s all I tested. My guess is that any wide content inside the same column would run into the same limit, including a code block or CSV output, but I haven&#39;t verified that.&lt;/p&gt;
+</content>
+    <summary>Google Gemini&#39;s web UI answered with a table just wider than its reply column. It scrolled, but I wanted one screenshot of the whole thing. I couldn&#39;t find the culprit in DevTools, so I asked Gemini to fix itself. Here&#39;s the CSS that worked, and why it&#39;s a sledgehammer.</summary>
+  </entry>
+  <entry>
+    <title>Building a Dark Mode Toggle That Plays Nice With Dark Reader</title>
+    <link href="https://linuxtampa.com/blog/2026-03-18-dark-mode-and-dark-reader/"/>
+    <updated>2026-08-12T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-03-18-dark-mode-and-dark-reader/</id>
+    <content type="html">&lt;h2&gt;Why I Care About This&lt;/h2&gt;
+&lt;p&gt;In 2022, I had life-changing eye surgery — lens replacement. Before the surgery, I could not read bright white screens without significant pain and discomfort. Dark Reader became a non-negotiable part of my browser setup. Every site I visited got inverted whether the developers intended it or not.  But sometimes a web offers a dark mode toggle but it actually conflict with DarkReader&#39;s efforts.&lt;/p&gt;
+&lt;p&gt;I&#39;m not alone. Millions of people depend on Dark Reader and similar extensions for accessibility reasons — photosensitivity, migraines, recovering from eye surgery, or simply preferring low-luminance environments. Many of them have no control over their viewing conditions. Think about screen sharing: when someone else is presenting, you&#39;re stuck with whatever theme their machine is running.&lt;/p&gt;
+&lt;p&gt;With the new artificial lens in each eye now, I can handle bright screens again — though I still prefer dark.  But the issue is still important to me, because #empathy is an important value.&lt;/p&gt;
+&lt;p&gt;But building this site gave me a fresh appreciation for the problem from the other side: what happens when &lt;em&gt;your&lt;/em&gt; site&#39;s dark mode toggle and Dark Reader are both active at the same time?&lt;/p&gt;
+&lt;p&gt;The short answer: they fight, and it looks terrible.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;When you build a dark mode toggle into your site, you&#39;re typically doing something like this:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;// Set dark mode&lt;/span&gt;
+document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;// Set light mode&lt;/span&gt;
+document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And your CSS looks like:&lt;/p&gt;
+&lt;pre class=&quot;language-css&quot;&gt;&lt;code class=&quot;language-css&quot;&gt;&lt;span class=&quot;token selector&quot;&gt;:root&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--bg-main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #fdf8f2&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--text-primary&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #2c1a0e&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;token selector&quot;&gt;[data-theme=&quot;dark&quot;]&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--bg-main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #0f150f&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;--text-primary&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;:&lt;/span&gt; #00ff9f&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This works beautifully on its own. But Dark Reader works by injecting its own stylesheet into the page — it analyzes your colors, inverts them, and applies its own &lt;code&gt;data-darkreader-scheme&lt;/code&gt; attribute to &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt;. If your toggle is also active, both stylesheets are fighting over the same elements. The result is an ugly, inconsistent mess: some things are double-inverted back to light, others are a muddy combination of both themes.&lt;/p&gt;
+&lt;p&gt;The polite solution is to detect that Dark Reader is present and step aside.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Detecting Dark Reader&lt;/h2&gt;
+&lt;p&gt;Dark Reader signals its presence by adding a &lt;code&gt;data-darkreader-scheme&lt;/code&gt; attribute to the &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt; element. You can check for it directly:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;isDarkReaderActive&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt;
+  document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;hasAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The catch: Dark Reader injects asynchronously after the page loads. If you check at &lt;code&gt;DOMContentLoaded&lt;/code&gt;, you&#39;ll often check before DR has done anything. A simple &lt;code&gt;setTimeout&lt;/code&gt; workaround is fragile — network speed, extension load order, and browser quirks all affect timing.&lt;/p&gt;
+&lt;p&gt;The right event to catch these changes is called a &lt;code&gt;MutationObserver&lt;/code&gt;. It watches the DOM for changes and fires a callback the instant Dark Reader adds or removes its attribute — no polling, no race conditions, NO EXCUSES!&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The Solution&lt;/h2&gt;
+&lt;p&gt;Here&#39;s the complete dark mode toggle script with Dark Reader awareness built in:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; themeToggle &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getElementById&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme-toggle&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; themeToggleText &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getElementById&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme-toggle-text&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; html &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; document&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;documentElement&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;setTheme&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token parameter&quot;&gt;theme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;theme &lt;span class=&quot;token operator&quot;&gt;===&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+      html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      themeToggleText&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;textContent &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;Light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+      html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      themeToggleText&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;textContent &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;Dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+      localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token comment&quot;&gt;// Restore saved preference on load&lt;/span&gt;
+  &lt;span class=&quot;token function&quot;&gt;setTheme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  themeToggle&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;addEventListener&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;click&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; current &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;setTheme&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;current &lt;span class=&quot;token operator&quot;&gt;===&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token comment&quot;&gt;// Hide our toggle if Dark Reader is active — it&#39;s already doing the job.&lt;/span&gt;
+  &lt;span class=&quot;token comment&quot;&gt;// Use visibility:hidden instead of display:none to preserve layout spacing.&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;checkDarkReader&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; drActive &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; html&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;hasAttribute&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    themeToggle&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;style&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;visibility &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; drActive &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;hidden&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token function&quot;&gt;checkDarkReader&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;token keyword&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;MutationObserver&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;checkDarkReader&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;observe&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;html&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token literal-property property&quot;&gt;attributes&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token boolean&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;token literal-property property&quot;&gt;attributeFilter&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;data-darkreader-scheme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The key decisions:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;attributeFilter: [&#39;data-darkreader-scheme&#39;]&lt;/code&gt;&lt;/strong&gt; — We&#39;re only watching for the one attribute we care about. Without this filter, the observer would fire on &lt;em&gt;any&lt;/em&gt; attribute change to &lt;code&gt;&amp;lt;html&amp;gt;&lt;/code&gt;, including our own &lt;code&gt;data-theme&lt;/code&gt; toggles, causing unnecessary callbacks.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;visibility: hidden&lt;/code&gt; instead of &lt;code&gt;display: none&lt;/code&gt;&lt;/strong&gt; — This is a subtle but important distinction. &lt;code&gt;display: none&lt;/code&gt; removes the element from the layout flow entirely. If your toggle button is a flex child in your nav bar, hiding it with &lt;code&gt;display: none&lt;/code&gt; collapses that slot and causes the remaining nav items to shift. &lt;code&gt;visibility: hidden&lt;/code&gt; makes the element invisible while preserving its space in the layout — the nav stays perfectly centered regardless of whether the button is visible.&lt;/p&gt;
+&lt;pre class=&quot;language-css&quot;&gt;&lt;code class=&quot;language-css&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;/* What we want — button disappears, space remains */&lt;/span&gt;
+themeToggle.style.visibility = &lt;span class=&quot;token string&quot;&gt;&#39;hidden&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;  &lt;span class=&quot;token comment&quot;&gt;/* ✓ */&lt;/span&gt;
+
+&lt;span class=&quot;token comment&quot;&gt;/* What we don&#39;t want — button disappears, nav shifts */&lt;/span&gt;
+themeToggle.style.display = &lt;span class=&quot;token string&quot;&gt;&#39;none&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;       &lt;span class=&quot;token comment&quot;&gt;/* ✗ */&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;hr /&gt;
+&lt;h2&gt;The HTML&lt;/h2&gt;
+&lt;p&gt;Your toggle button just needs an ID and a text span to update:&lt;/p&gt;
+&lt;pre class=&quot;language-html&quot;&gt;&lt;code class=&quot;language-html&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;button&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;theme-toggle&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;aria-label&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;Toggle dark mode&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;
+  &lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;&lt;/span&gt;span&lt;/span&gt; &lt;span class=&quot;token attr-name&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;token attr-value&quot;&gt;&lt;span class=&quot;token punctuation attr-equals&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;theme-toggle-text&lt;span class=&quot;token punctuation&quot;&gt;&quot;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;Dark&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;/&lt;/span&gt;span&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token tag&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;&amp;lt;/&lt;/span&gt;button&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When Dark Reader is active, the button is invisible but still in the DOM, still taking up space, and the &lt;code&gt;MutationObserver&lt;/code&gt; is still watching. The moment a user disables Dark Reader, the observer fires, the button reappears, and your toggle is fully functional again.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;A Note on Accessibility&lt;/h2&gt;
+&lt;p&gt;If you&#39;re building for an audience that includes people with photosensitivity or visual impairments, a well-implemented dark mode isn&#39;t just a nice-to-have — it&#39;s a courtesy. Dark Reader exists because browsers and operating systems were late to the party on system-level dark mode, and many sites still don&#39;t respect &lt;code&gt;prefers-color-scheme&lt;/code&gt; at all.&lt;/p&gt;
+&lt;p&gt;The approach above respects the user&#39;s choice: if they&#39;ve installed Dark Reader, they&#39;ve made a deliberate decision about how they want to see the web. Your toggle doesn&#39;t fight them — it just quietly gets out of the way.&lt;/p&gt;
+&lt;p&gt;If you want to go further, you can also respect the system preference on first load by checking &lt;code&gt;prefers-color-scheme&lt;/code&gt; before falling back to your saved &lt;code&gt;localStorage&lt;/code&gt; value:&lt;/p&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;token function-variable function&quot;&gt;getInitialTheme&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&gt;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;const&lt;/span&gt; saved &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; localStorage&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;getItem&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;theme&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;saved&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; saved&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; window&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;matchMedia&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&#39;(prefers-color-scheme: dark)&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;matches
+    &lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark&#39;&lt;/span&gt;
+    &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;light&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Small things. Big difference for the people who need them.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Update: Now an npm Package&lt;/h2&gt;
+&lt;p&gt;I liked this pattern enough that I pulled it out of this site and turned it into a proper package: &lt;a href=&quot;https://github.com/timbaileyjones/dark-reader-aware-theme-toggle-button&quot;&gt;&lt;code&gt;dark-reader-aware-theme-toggle-button&lt;/code&gt;&lt;/a&gt; (&lt;a href=&quot;https://www.npmjs.com/package/dark-reader-aware-theme-toggle-button&quot;&gt;npm&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;It&#39;s the same idea as above, hardened a bit further — it checks all four DOM signals Dark Reader can leave behind (dynamic &lt;em&gt;and&lt;/em&gt; filter/static modes, not just &lt;code&gt;data-darkreader-scheme&lt;/code&gt;), ships TypeScript types, and has zero runtime dependencies. Both this site and &lt;a href=&quot;https://bailey-jones.com/&quot;&gt;bailey-jones.com&lt;/a&gt; run on it now.&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;npm&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;install&lt;/span&gt; dark-reader-aware-theme-toggle-button&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-javascript&quot;&gt;&lt;code class=&quot;language-javascript&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; mountThemeToggleButton &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark-reader-aware-theme-toggle-button&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;dark-reader-aware-theme-toggle-button/styles/toggle-button.css&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;token function&quot;&gt;mountThemeToggleButton&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token literal-property property&quot;&gt;button&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;#theme-toggle&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token literal-property property&quot;&gt;label&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;#theme-toggle-text&#39;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Everything else on this page — the reasoning, the &lt;code&gt;MutationObserver&lt;/code&gt;, the &lt;code&gt;visibility: hidden&lt;/code&gt; trick — still holds. The package just saves you from copy-pasting it into every project.&lt;/p&gt;
+</content>
+    <summary>How to detect the Dark Reader browser extension and gracefully step aside — with a MutationObserver, a one-liner CSS trick, and a lesson I learned the hard way about why this actually matters.</summary>
+  </entry>
+  <entry>
+    <title>Starting Fresh: Why I Launched LinuxTampa</title>
+    <link href="https://linuxtampa.com/blog/2026-03-10-hello-world/"/>
+    <updated>2026-03-10T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2026-03-10-hello-world/</id>
+    <content type="html">&lt;p&gt;After more than three decades writing software for large organizations, I recently made the leap to independent consulting under the banner of &lt;strong&gt;LinuxTampa, LLC&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;This wasn&#39;t entirely by choice — the W-2 market has been brutal lately, and I&#39;m far from alone in that experience. But the more I&#39;ve leaned into contract work, the more I&#39;ve realized it suits me. I get to pick interesting problems, work with a wider range of technology stacks, and spend less time in status meetings.&lt;/p&gt;
+&lt;h2&gt;What LinuxTampa Is&lt;/h2&gt;
+&lt;p&gt;LinuxTampa is my vehicle for helping businesses get real value out of open source technology and cloud infrastructure. The name reflects where I live and what I&#39;ve built my career on: Linux, in all its forms, from embedded systems to enterprise cloud.&lt;/p&gt;
+&lt;p&gt;Over the years I&#39;ve worked across a wide range of domains — telecommunications, financial services, defense, robotics, AI validation. The common thread has been Linux, automation, and a preference for building things that actually last.&lt;/p&gt;
+&lt;h2&gt;What to Expect Here&lt;/h2&gt;
+&lt;p&gt;This blog is where I&#39;ll share:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Stories from the field&lt;/strong&gt; — the real challenges and how we solved them&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Technical deep dives&lt;/strong&gt; — infrastructure, DevOps, cloud architecture&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Career observations&lt;/strong&gt; — what&#39;s changing in the industry for experienced engineers&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;More posts coming soon. If you want to talk about a project, &lt;a href=&quot;https://linuxtampa.com/contact&quot;&gt;get in touch&lt;/a&gt;.&lt;/p&gt;
+</content>
+    <summary>After 30+ years in corporate software development, I&#39;m going independent. Here&#39;s what that looks like and why open source is at the center of it.</summary>
+  </entry>
+  <entry>
+    <title>What I&#39;m Looking For in Future Work</title>
+    <link href="https://linuxtampa.com/blog/2025-05-10-future-work/"/>
+    <updated>2025-05-10T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2025-05-10-future-work/</id>
+    <content type="html">&lt;h2&gt;What I offer&lt;/h2&gt;
+&lt;p&gt;I have been working with AWS Cloud technologies heavily since 2017, and more recently with GCP (Google Cloud Platform).  Before that, I developed many applications going back to the early 1990s.  I&#39;m proficient in front-end, back-end, and cloud, and I am at my best in a role where I can contribute on all three fronts.&lt;/p&gt;
+&lt;p&gt;My canonical resume is on &lt;a href=&quot;https://linkedin.com/in/timbaileyjones&quot;&gt;my LinkedIn page&lt;/a&gt;, and &lt;a href=&quot;https://linuxtampa.com/about&quot;&gt;a skill summary is here&lt;/a&gt;, but I&#39;ll go over the broad strokes.&lt;/p&gt;
+&lt;h3&gt;What I hate to work with&lt;/h3&gt;
+&lt;p&gt;I don&#39;t have a lot of no-go zones, so let&#39;s get them out of the way first.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Microsoft Windows&lt;/li&gt;
+&lt;li&gt;WSL2&lt;/li&gt;
+&lt;li&gt;Oracle&lt;/li&gt;
+&lt;li&gt;J2EE&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;What I love to work with&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Linux&lt;/strong&gt; &lt;br /&gt;
+I have been a nearly-daily Linux user and developer since &lt;a href=&quot;https://en.wikipedia.org/wiki/Yggdrasil_Linux/GNU/X&quot;&gt;Fall &#39;94 Yggdrasil Linux&lt;/a&gt;.  I have built many custom PCs for Linux Desktop use over the years.  I was a RedHat guy until 1999, then switched to Debian, and Ubuntu.  I have toyed around with a bunch of other distros, but mostly prefer Ubuntu over CentOS/RHEL/AmazonLinux.&lt;/p&gt;
+&lt;p&gt;Today, most cloud workloads are Linux-based, from tiny docker containers to entire virtual machines, along with most IaaS/PaaS/SaaS offerings.  MacOSX has been Linux-like for many years, and even Microsoft has finally embraced the Linux way (WSL2).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Cloud Computing&lt;/strong&gt; &lt;br /&gt;
+Despite having acquired a boatload of Cloud Skills since 2017, I recognize there are still legitimate requirements and demand for on-prem/local servers.  Between 1992 and 2016, I worked entirely for companies that operated entirely from data centers and machines in their local headquarters, and in one case, even shipped physical rack-server units with custom apps pre-installed.  I still possess those local Linux sysadmin and networking skill sets, and am open to doing this kind of work again.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;AWS&lt;/strong&gt; &lt;br /&gt;
+Since 2017, I have passed &lt;a href=&quot;https://aw.certmetrics.com/amazon/public/verification.aspx&quot;&gt;3 AWS certifications over the years&lt;/a&gt; (DevOps Pro, Solutions Architect, Developer Associate) &lt;small&gt;(credential SFJZ9X8J1FRQ1HSV)&lt;/small&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;GCP&lt;/strong&gt; &lt;br /&gt;
+Since 2022, I began working with Google Cloud Platform, and vastly prefer it for speed, ease of use, more Unix-like tooling, and much lower costs.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Terraform / OpenTofu&lt;/strong&gt; &lt;br /&gt;
+At first, I learned AWS using CloudFormation for IaC (Infrastructure as Code). Later, I learned the far superior (and portable!) tooling of Terraform, and after that, it became an easy way to become productive with Google Cloud Platform, Azure, and even other services that are not full cloud providers.  &lt;a href=&quot;https://registry.terraform.io/browse/providers&quot;&gt;(Okta, DigitalOcean, GitLab, Kubernetes, all other Hashicorp products among them)&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Digital Ocean&lt;/strong&gt; — I love these small developer-oriented cloud services. They work with Terraform too!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Before 2017, all my experience was with on-premises servers. I am comfortable with server hardware and Linux system administration.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Backend Development&lt;/strong&gt; &lt;br /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;I worked with most of the major programming languages over the years, from C/C++ back in the 1990s, to Java, Python, JavaScript/TypeScript/Node, GoLang, and Java Servlets.  Of these, I have come to value GoLang the most.&lt;/li&gt;
+&lt;li&gt;I have written many applications that interface to large RDBMS systems, including Postgres, MySQL, Vertica DB, MS SQL Server, and Informix, through ODBC and JDBC connections.&lt;/li&gt;
+&lt;li&gt;I am fluent in SQL, query tuning/optimization for a few databases, and database administration.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Frontend Development&lt;/strong&gt; &lt;br /&gt;
+I saw my &lt;a href=&quot;https://en.wikipedia.org/wiki/Netcom_(United_States)&quot;&gt;first webpage in 1991 on NetCom&lt;/a&gt;, and have been writing web applications ever since. Today, I am fluent in React, and for legacy sites that aren&#39;t React, I find that jQuery is still quite relevant.
+I have generated lots of HTML content with Java Server Pages, PHP, and ColdFusion.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;What I look for&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Full-time / Remote Work&lt;/strong&gt; &lt;br /&gt;
+In addition to the usual advantages of remote work, I get unparalleled peace and quiet working from my rural property.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Variety&lt;/strong&gt; &lt;br /&gt;
+I do my best work on small teams that truly embrace DevOps, where each contributor shares responsibility for design, development, testing, deployment, monitoring, and iteration planning.  With my very long experience with front-end and back-end development (since 1992), and several years of AWS/GCP work, I look forward to wearing many different hats.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Unfortunately, in some environments, the term &lt;strong&gt;devops&lt;/strong&gt; has become a misused term that describes a team that only works on infrastructure, and doesn&#39;t actually develop the application.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;I have spent a lot of time in consulting, and that gives me the chance to work in multiple client teams, working practices, and tech stacks.  I don&#39;t really care what industry I&#39;m working in, because it is the art of building software that interests me above all else.  However, I also love building products intended for external consumption, particularly if it is published under &lt;a href=&quot;https://opensource.org/licenses/&quot;&gt;an OSI-approved license&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Social Responsibility&lt;/strong&gt; &lt;br /&gt;
+Like most developers, I believe in &lt;a href=&quot;https://online.hbs.edu/blog/post/types-of-corporate-social-responsibility&quot;&gt;corporate social responsibility&lt;/a&gt;, and would be attracted to organizations that promote causes like:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Universal broadband / access for rural areas &amp;amp; the disadvantaged.&lt;/li&gt;
+&lt;li&gt;Better healthcare access &amp;amp; outcomes.&lt;/li&gt;
+&lt;li&gt;More access to higher education, voting and civic opportunities.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Conversely, I would not consider working in fossil fuels, polluters, gambling, misinformation, exploitation of others, etc.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    <summary>My tech stack preferences, work environment requirements, and values — what you get when you hire me and what I look for in a good engagement.</summary>
+  </entry>
+  <entry>
+    <title>Every Site I&#39;ve Ever Run — A History Since 1998</title>
+    <link href="https://linuxtampa.com/blog/2023-09-03-sites-overview/"/>
+    <updated>2023-09-03T00:00:00Z</updated>
+    <id>https://linuxtampa.com/blog/2023-09-03-sites-overview/</id>
+    <content type="html">&lt;p&gt;I have owned and operated a number of websites over the years. Here is a list of them, with a brief description of each.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://bailey-jones.com/&quot;&gt;bailey-jones.com&lt;/a&gt; — my personal/music site, started in 2019. It is a static site built with Eleventy.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://paperprinciples.com/&quot;&gt;paperprinciples.com&lt;/a&gt; — a website for my late wife&#39;s origami crafts. It is a static site, with embedded youtube videos we recorded together.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://gotonight.com/&quot;&gt;gotonight.com&lt;/a&gt; — a website for a startup I worked for, started in 2012. It was written in Coldfusion, and has been redeveloped in React.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://tuckasee.com/&quot;&gt;tuckasee.com&lt;/a&gt; — This is a site for my father&#39;s fine handcrafted bowed psalteries and hammered dulcimers.   He retired many years ago, and passed away in March 2026, but I keep this site up as a tribute to him.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://sunshinebrass.com/&quot;&gt;sunshinebrass.com&lt;/a&gt; — a website for a brass band, started in 2005. It was written in PHP, and is now a static site.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://gasparbrass.com/&quot;&gt;gasparbrass.com&lt;/a&gt; — a website for my brass quintet, started in 2005. It was written in PHP, and is now a static site.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://adamjones.tech/&quot;&gt;adamjones.tech&lt;/a&gt; — my son&#39;s website, started in 2019. It is a static site, done in React.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://timjones.com/&quot;&gt;timjones.com&lt;/a&gt; — my personal website, started in 2015. Now redirects to bailey-jones.com.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://tampabaybrass.com/&quot;&gt;tampabaybrass.com&lt;/a&gt; — a website for a brass quintet, started in 2000.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://carrollwoodbrass.com/&quot;&gt;carrollwoodbrass.com&lt;/a&gt; — a website for a brass ensemble, started in 2012.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    <summary>A running list of the websites I&#39;ve owned and operated since 1998 — from Perl scripts on shared hosting to GCP-deployed static sites.</summary>
+  </entry>
+</feed>
