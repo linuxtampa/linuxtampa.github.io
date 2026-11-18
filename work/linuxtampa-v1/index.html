@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinuxTampa 1.0 — Independent Consulting (2000–2001) | LinuxTampa, LLC</title>
+  <meta name="description" content="The original LinuxTampa — self-employed at the height of the dot-com era, building Linux-based systems including the world&#39;s first Linux-based ATM.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>LinuxTampa 1.0 — Independent Consulting (2000–2001)</h1>
+<p>These are projects I undertook during my first run as an independent Linux consultant.</p>
+<h2>MoneyTree ATM — The World's First Linux-Based ATM (2000)</h2>
+<p>The flagship project of this era was <strong>MoneyTree ATM</strong> in Destin, FL. The hardware team handled the enclosure — a hardened, robbery-resistant cabinet with a retractable keyboard controlled via RS-232C serial port. My job was everything else.</p>
+<h3>Hardware Integration</h3>
+<p>The machine had <strong>six serial devices</strong>, each requiring a custom driver:</p>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retractable keyboard</td>
+<td>Motor control via RS-232C</td>
+</tr>
+<tr>
+<td>8 side buttons (4×2)</td>
+<td>POS-style selection buttons</td>
+</tr>
+<tr>
+<td>19.2k bps modem</td>
+<td>Visa merchant authorization</td>
+</tr>
+<tr>
+<td>De La Rue cash dispenser</td>
+<td>Currency dispensing</td>
+</tr>
+<tr>
+<td>3&quot; thermal printer</td>
+<td>Receipt printing with auto-cut</td>
+</tr>
+<tr>
+<td>Magnetic stripe card reader</td>
+<td>Payment card swipe (EMV was years away)</td>
+</tr>
+</tbody>
+</table>
+<p>The stock Linux kernel supported four serial ports. Six were required. The fix was straightforward but required going into the kernel: I found the C array of structs declaring IRQ/DMA settings for COM1–COM4, doubled it to eight entries, and recompiled. This is possibly the smallest and easiest kernel modification that ever added a genuinely essential capability.</p>
+<p>The De La Rue cash dispenser had no SDK, but its serial protocol was well-documented. I wrote directly to the serial port according to the protocol spec.</p>
+<p>Because there was no continuously-available IP connectivity in 2000, remote management wasn't feasible — machines required in-person visits for maintenance.</p>
+<h3>If we were to do it all over again</h3>
+<p>A newer ATM platform would not have required six serial ports:</p>
+<ul>
+<li>the 8 side buttons, the cash dispenser and thermal printer would be USB driven, would not have required hardcoding IRQ/DMA channels, and would auto-configure themselves.</li>
+<li>Similarly, the card reader would also be USB-based, but also would feature smart-chip &amp; contactless/RFID functionality as well.</li>
+<li>Communication for such a system today would have been ethernet or Wifi-based, with a VPN tunnel, and 24x7 real-time monitoring.  The availability of higher bandwidth today would make advertising a key revenue source in addition to per-transaction convenience fees.</li>
+</ul>
+<h3>Software</h3>
+<ul>
+<li><strong>Device drivers</strong> for all six serial devices</li>
+<li><strong>End-user GUI</strong> and <strong>manager/maintenance GUI</strong> built with Qt 2.0 (from Trolltech, Norway) and the KDE/SDL libraries</li>
+<li><strong>Visa merchant authorization</strong> — dial-up via the modem, request/response sequence to authorize the cardholder's account for the dispensed amount</li>
+<li><strong>Media playback on successful dispense</strong> — the machine played a full-screen video after dispensing cash. At the banking convention, it was a dancing baby with <em>&quot;We're in the Money&quot;</em> playing in the background. Deployed systems could be configured with any AVI/MOV file the owner wanted.</li>
+</ul>
+<h2>Other Engagements</h2>
+<ul>
+<li><strong>byteaudio.com</strong> — consulting for an independent digital music label</li>
+<li><strong>cookiecryption.com</strong> — security consulting, and implementation for language-specific SDKs.</li>
+<li><strong>LinuxSC.com</strong> — custom multicast router implementation in Linux, used for mobile wired Ethernet on planes.</li>
+<li>Various other companies from the dot-com era, most of which are now long-forgotten.</li>
+</ul>
+<p><a href="/work/">← Back to Work</a></p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+
