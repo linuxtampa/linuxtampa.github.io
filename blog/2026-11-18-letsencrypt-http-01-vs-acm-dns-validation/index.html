@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why my client automated Let&#39;s Encrypt instead of asking its customers to edit DNS | LinuxTampa, LLC</title>
+  <meta name="description" content="Let&#39;s Encrypt proves you control a name by serving a file from your web server; AWS ACM wants a DNS record only the customer can add. Why that difference made one of my clients automate renewals instead of chasing customers.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <article class="blog-post">
+  <header class="post-header">
+    <h1>Why my client automated Let&#39;s Encrypt instead of asking its customers to edit DNS</h1>
+    <div class="post-meta">
+      <time datetime="2026-11-18">November 18, 2026</time>
+      
+      <span class="post-tags">
+        
+          
+        
+          
+          <a href="/tags/aws/" class="tag">aws</a>
+          
+        
+          
+          <a href="/tags/acm/" class="tag">acm</a>
+          
+        
+          
+          <a href="/tags/letsencrypt/" class="tag">letsencrypt</a>
+          
+        
+          
+          <a href="/tags/tls/" class="tag">tls</a>
+          
+        
+          
+          <a href="/tags/automation/" class="tag">automation</a>
+          
+        
+          
+          <a href="/tags/devops/" class="tag">devops</a>
+          
+        
+      </span>
+      
+    </div>
+    
+    <p class="post-description">Let&#39;s Encrypt proves you control a name by serving a file from your web server; AWS ACM wants a DNS record only the customer can add. Why that difference made one of my clients automate renewals instead of chasing customers.</p>
+    
+  </header>
+
+  <div class="post-content">
+    <p>One of my clients runs a SaaS platform on AWS. Some of its products can be white-labeled: a customer points
+a hostname of their own at the client's load balancer (<code>dashboard.customer-example.com</code>, say), and the
+platform serves it with that customer's branding. The client also offers its services under its own domains
+and branding, which turn out to be a different story (the end of this post explains why). The white-label
+hostnames were on Let's Encrypt certificates that someone had imported into AWS Certificate Manager (ACM) by
+hand. They were all due to expire within a few days of each other, and ACM does not renew imported
+certificates.</p>
+<p>The obvious fix was &quot;just let ACM issue them&quot;. The client tried it. It did not work, and <em>why</em> it did not
+work turned out to be the interesting part.</p>
+<h2>Two ways to prove you own a name</h2>
+<p>Every public CA has to check that you control the name before it signs a certificate. ACM and Let's
+Encrypt do that check differently.</p>
+<div class="bordered-table">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ACM (public certificates)</th>
+<th>Let's Encrypt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>How you prove control</td>
+<td>Publish a <strong>DNS CNAME</strong> record that ACM gives you (or answer an email)</td>
+<td>Serve a small file over <strong>plain HTTP</strong> at <code>/.well-known/acme-challenge/&lt;token&gt;</code> (HTTP-01), or publish a DNS TXT record (DNS-01)</td>
+</tr>
+<tr>
+<td>Who has to act</td>
+<td>Whoever <strong>controls the domain's DNS</strong></td>
+<td>Whoever controls the <strong>web server the name points at</strong></td>
+</tr>
+<tr>
+<td>Renewal</td>
+<td>Automatic, as long as that CNAME stays published</td>
+<td>Your job: certificates last 90 days, and your ACME software renews them</td>
+</tr>
+<tr>
+<td>Time limit</td>
+<td>A pending request times out after 72 hours</td>
+<td>None; every renewal is a fresh challenge</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Look at the second row. For ACM, the proof lives in DNS. For Let's Encrypt's HTTP-01, the proof lives on
+the server. Here are the two flows side by side, with the same customer hostname in both.</p>
+<p><strong>ACM with DNS validation: the proof needs the customer.</strong></p>
+<p><img src="/images/blog/le-acm-dns-validation.png" alt="Sequence diagram of ACM DNS validation. The client's platform team requests a certificate; ACM returns a CNAME; the team emails the customer; the customer must log in to their DNS provider and add the record; ACM looks it up. If it is published within 72 hours the certificate is issued and renews itself, otherwise the request ends in VALIDATION_TIMED_OUT."></p>
+<p><strong>Let's Encrypt with HTTP-01: the proof needs only the client.</strong></p>
+<p><img src="/images/blog/le-acm-http-01-validation.png" alt="Sequence diagram of Let's Encrypt HTTP-01 validation. The client's renewer orders a certificate; Let's Encrypt asks for a token to be served at a well-known URL; Let's Encrypt fetches that URL from the client's load balancer, whose responder answers with the token and the account key thumbprint; the certificate is issued and imported to the same ACM certificate."></p>
+<p>The first diagram has two humans and a deadline in the middle of it. The second has none.</p>
+<h2>Why that mattered for my client</h2>
+<p>For a white-labeled hostname, <strong>the customer owns the DNS and the client owns the server</strong>. The customer already
+did the one thing that was needed: they pointed their hostname at the platform. That is exactly what HTTP-01
+relies on. If <code>dashboard.customer-example.com</code> reaches the client's load balancer, the client can answer a
+challenge for it, and nobody outside the client's company has to do anything.</p>
+<p>ACM wanted the opposite. For each of those hostnames, a person at the customer had to log in to their
+DNS provider, add a CNAME with a long machine-generated name, and leave it there forever. All of the
+requests were made and then waited on. The 72 hours ran out, and every one failed with <code>VALIDATION_TIMED_OUT</code>. It was
+not that anyone refused. These are small businesses, the person who owns DNS is often an agency or a
+registrar login nobody remembers, and &quot;please add this record&quot; has to survive an email chain. The client was
+about to spend a week of account-manager time to avoid writing a script.</p>
+<p>The deadline and the arithmetic settled it. Coordinating that many outside parties before a fixed date has a
+high chance of missing one. Automating a renewal the client fully controls has a low one. So the client
+stopped chasing customers, and I wrote the renewer.</p>
+<h2>What I built</h2>
+<p>The design is small, and almost all of it is deliberately boring.</p>
+<ol>
+<li>
+<p><strong>A tiny, stateless responder.</strong> An HTTP-01 answer is <code>&lt;token&gt;.&lt;thumbprint of your ACME account key&gt;</code>.
+The thumbprint is public and fixed, and the token is in the request URL. So a function can answer <em>any</em>
+token with no database and no storage:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">handler</span><span class="token punctuation">(</span>event<span class="token punctuation">,</span> context<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    token <span class="token operator">=</span> challenge_token<span class="token punctuation">(</span>event<span class="token punctuation">[</span><span class="token string">"path"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>          <span class="token comment"># validates the URL shape</span>
+    <span class="token keyword">if</span> event<span class="token punctuation">[</span><span class="token string">"httpMethod"</span><span class="token punctuation">]</span> <span class="token keyword">not</span> <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">"GET"</span><span class="token punctuation">,</span> <span class="token string">"HEAD"</span><span class="token punctuation">)</span> <span class="token keyword">or</span> <span class="token keyword">not</span> token<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span><span class="token string">"statusCode"</span><span class="token punctuation">:</span> <span class="token number">404</span><span class="token punctuation">,</span> <span class="token string">"body"</span><span class="token punctuation">:</span> <span class="token string">""</span><span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token punctuation">{</span><span class="token string">"statusCode"</span><span class="token punctuation">:</span> <span class="token number">200</span><span class="token punctuation">,</span> <span class="token string">"headers"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token string">"Content-Type"</span><span class="token punctuation">:</span> <span class="token string">"text/plain"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token string">"body"</span><span class="token punctuation">:</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>token<span class="token punctuation">}</span></span><span class="token string">.</span><span class="token interpolation"><span class="token punctuation">{</span>os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">'ACME_ACCOUNT_THUMBPRINT'</span><span class="token punctuation">]</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">}</span></code></pre>
+<p>It runs as an AWS Lambda behind the load balancer. A rule on port 80 sends
+<code>/.well-known/acme-challenge/*</code> for the client's hostnames to it, and everything else keeps redirecting to
+HTTPS.</p>
+</li>
+<li>
+<p><strong>A Python renewer</strong> that asks ACM how long each certificate has left, orders a new one from Let's
+Encrypt if it is inside a 30-day window, and imports the result <strong>to the same ACM certificate ARN</strong>.
+Re-importing to the same ARN is the important trick: the load balancer's listener keeps pointing at the
+same certificate object, so nothing about the load balancer changes.</p>
+</li>
+<li>
+<p><strong>A scheduled CI job</strong> (a GitLab pipeline schedule, once a week) that runs the renewer with short-lived
+credentials, then posts one summary message to the client's team chat: renewed, or failed and why. No
+servers, no cron box, nothing to patch.</p>
+</li>
+</ol>
+<p>There is one shared Let's Encrypt account for all of the names. The account key lives in a secrets
+manager and never in the repository. Let's Encrypt rate limits are per <em>name</em>, not per account, so one
+account is fine.</p>
+<h2>What the real run taught me</h2>
+<p>Mocks told me the ACME flow worked. Production taught me three things the mocks could not.</p>
+<ul>
+<li><strong>ACM insists the key type matches on re-import.</strong> The first import failed because the renewer generated
+RSA-2048 keys and the existing certificates were RSA-4096. Nothing changed (a failed import is a
+no-op), and the renewer now reads the current key size and matches it.</li>
+<li><strong>A load balancer is several machines.</strong> Right after an import, my own check saw the new certificate
+while a second check a few seconds later still saw the old one. The renewer now resolves every address
+of the host and waits until <em>all</em> of them serve the new serial.</li>
+<li><strong>Test against staging first, and make staging unable to hurt you.</strong> Let's Encrypt has a staging
+environment with the same API and no rate-limit pain. The renewer defaults to staging, and a staging
+run is hard-coded never to import anything. I did the first handful of hostnames by hand, in order of least
+traffic, then let the schedule do the rest unattended at 2:33 AM. It did, and the chat message
+was waiting when I woke up.</li>
+</ul>
+<h2>When to use which</h2>
+<p>Here is how I think about the choice now:</p>
+<p><img src="/images/blog/le-acm-which-method.png" alt="Decision flowchart. If the client controls DNS for the name, use ACM with DNS validation. If the customer controls it and can reliably publish a CNAME before the deadline, also use ACM. If they are unsure or slow and the name already points at the client's server, use Let's Encrypt HTTP-01 and own the renewal automation. If the name does not point at the client, fix that first or use DNS-01 or ACM. Wildcard certificates cannot use HTTP-01."></p>
+<p>This is not &quot;ACM bad, Let's Encrypt good&quot;. ACM is still the better answer when <strong>you control the DNS</strong>
+(your own domains, your own zones): you add the CNAME once, and renewal is free and invisible forever. That
+is why my client's own-brand domains never had this problem: it controls their DNS, so ACM issues and renews
+those certificates with nobody lifting a finger.</p>
+<p>HTTP-01 is the better answer when <strong>the party who controls DNS is not the party running the server</strong>,
+which is the white-label, reseller and multi-tenant situation. Its limits are real: it only works for
+names that actually point at your server, it cannot issue wildcards (that needs DNS-01), and you now own a
+renewal pipeline and its alerting. And certificate lifetimes are heading down across the whole industry,
+so &quot;automate it&quot; stops being optional anyway.</p>
+<h2>The takeaway</h2>
+<p>Pick the validation method by asking <em>who can already do the thing the proof requires</em>. ACM's DNS proof
+needs the customer. Let's Encrypt's HTTP-01 proof only needs to show that you can answer a challenge via HTTP. My client chose the one that did
+not depend on other people's calendars. It took about 450 lines of Python and a 40-line Lambda, and the
+certificates now renew themselves.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <a href="/blog/">&larr; Back to Blog</a>
+  </footer>
+</article>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+

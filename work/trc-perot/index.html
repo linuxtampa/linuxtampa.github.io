@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRC / Perot Systems (1997–1999) | LinuxTampa, LLC</title>
+  <meta name="description" content="Y2K platform migration for Eagle Asset Management — Informix DBA, Solaris sysadmin, ETL development, and a script archaeology project that let the data speak for itself.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/prism-tomorrow.css">
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LNCB2QQZ3L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LNCB2QQZ3L');
+</script>
+
+
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="nav-container">
+        <a href="/" class="logo">
+          
+          <img src="/images/linuxtampa.png" alt="LinuxTampa, LLC" />
+          
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/small-business">Small&nbsp;Business</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="https://resume.linuxtampa.com/" target="_blank">Resume</a></li>
+          <li><a href="https://resume.linuxtampa.com/ats.html" target="_blank">Resume-ATS</a></li>
+        </ul>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+          <span id="theme-toggle-text">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>TRC / Perot Systems (1997–1999)</h1>
+<p>TRC was an OO-focused consulting firm that was acquired by Perot Systems during my time there (which was itself later acquired by Dell). My primary engagement was a Y2K remediation project for <strong>Eagle Asset Management (EAM)</strong> in St. Petersburg, FL.</p>
+<h2>What Y2K Actually Was</h2>
+<p>Nobody fixed old two-digit year fields in legacy code. What Y2K projects actually were, almost universally, was the migration projects that should have happened years earlier — with Y2K compliance as the forcing function. This was no different.</p>
+<p>EAM ran their entire investment operations on <strong>Investment Manager (IM)</strong>, an aging platform hosted on a Sequent minicomputer running Informix 5. The replacement was <strong>GIM 2.0 (Global Investment Manager)</strong> on new Solaris servers running Informix 7. My role: Informix DBA, Solaris sysadmin on the new environment, and author of the ETL jobs to migrate all data from the old platform to the new.</p>
+<h2>The Script Archaeology Problem</h2>
+<p>EAM had accumulated a graveyard of <code>ksh</code> and Informix-4GL scripts over the years — multiple copies of similar scripts, unclear ownership, no documentation on what was still in active use. Migrating everything blindly would waste weeks. Asking users what they used would produce unreliable answers.</p>
+<p>The solution: <strong>instrument everything first.</strong> At the start of the engagement, I prepended a single line to every script:</p>
+<pre class="language-bash"><code class="language-bash"><span class="token builtin class-name">umask</span> 000<span class="token punctuation">;</span> <span class="token builtin class-name">echo</span> <span class="token string">"<span class="token variable">$0</span> ran at <span class="token variable"><span class="token variable">$(</span><span class="token function">date</span><span class="token variable">)</span></span> by <span class="token variable">${<span class="token environment constant">USER</span>}</span> from <span class="token variable">${<span class="token environment constant">PWD</span>}</span>"</span> <span class="token operator">>></span> /some/globally/writeable/path.txt</code></pre>
+<p>Over the following weeks, the log file told the whole story — which scripts were actually running, how frequently, who was running them, and from where. Duplicate scripts surfaced immediately. Dead scripts were identifiable with confidence. The active ones could be prioritized by frequency and owner.</p>
+<p>Brute force, but effective. And the only approach that doesn't rely on users accurately recalling their own workflows — which they cannot.</p>
+<p><a href="/work/">← Back to Work</a></p>
+
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>&copy; 2026 LinuxTampa, LLC. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="https://linkedin.com/in/timbaileyjones" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/timbaileyjones" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@linuxtampa.com">Email</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/js/dra-theme-toggle.js"></script>
+  <script>
+    DarkReaderAwareThemeToggle.mount({
+      button: '#theme-toggle',
+      label: '#theme-toggle-text',
+    });
+  </script>
+  <script src="/js/carousel.js"></script>
+</body>
+</html>
+
